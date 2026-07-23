@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kalkulator Mizwala & Rashdul Qibla</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --input-bg: #334155;
+      --border-color: #475569;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --accent-glow: rgba(16, 185, 129, 0.2);
+      --gold: #f59e0b;
+      --blue-info: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 2rem 1rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    header h1 span {
+      color: var(--accent);
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 992px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Input Styling */
+    .form-row {
+      margin-bottom: 1.1rem;
+    }
+
+    .form-row label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+
+    .dms-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 24px 8px 10px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-wrapper input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-wrapper .unit {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+
+    .single-input input {
+      width: 100%;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .single-input input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Info Badge UTC */
+    .utc-badge {
+      background-color: rgba(59, 130, 246, 0.15);
+      border: 1px solid var(--blue-info);
+      color: #93c5fd;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .utc-badge strong {
+      color: #3b82f6;
+    }
+
+    /* Button */
+    .btn-calculate {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 1rem;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .btn-calculate:hover {
+      background-color: var(--accent-hover);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* Summary Results */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-card {
+      background-color: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .summary-card .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .summary-card .val-dms {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .summary-card .val-dec {
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-top: 0.2rem;
+    }
+
+    /* Table Container */
+    .table-card {
+      margin-top: 1.5rem;
+      grid-column: 1 / -1;
+    }
+
+    .table-wrapper {
+      max-height: 420px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background-color: #0f172a;
+      color: var(--accent);
+      padding: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 2px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+
+    tr:nth-child(even) {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    tr:hover {
+      background-color: rgba(16, 185, 129, 0.08);
+    }
+
+    .highlight-cell {
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    /* Custom Scrollbar */
+    .table-wrapper::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .table-wrapper::-webkit-scrollbar-track {
+      background: var(--bg-color);
+    }
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1><span>Mizwala</span> & Rashdul Qibla Calculator</h1>
+      <p>Simulasi Azimut Bayangan Matahari dengan Konversi Waktu WIB ke UTC/GMT</p>
+    </header>
+
+    <div class="dashboard-grid">
+      
+      <!-- Panel Input Data -->
+      <div class="card">
+        <div class="card-title">
+          <span>📍 Parameter Tempat & Waktu WIB</span>
+        </div>
+
+        <!-- Lintang Tempat -->
+        <div class="form-row">
+          <label>Lintang Tempat (Φ)</label>
+          <div class="dms-inputs">
+            <div class="input-wrapper"><input type="number" id="lat_d" value="-7"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="lat_m" value="-8"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="lat_s" value="-8.5" step="any"><span class="unit">"</span></div>
+          </div>
+        </div>
+
+        <!-- Bujur Tempat -->
+        <div class="form-row">
+          <label>Bujur Tempat (λ)</label>
+          <div class="dms-inputs">
+            <div class="input-wrapper"><input type="number" id="lon_d" value="110"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="lon_m" value="23"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="lon_s" value="40.6" step="any"><span class="unit">"</span></div>
+          </div>
+        </div>
+
+        <!-- Waktu Pengukuran (WIB) & Bujur Daerah -->
+        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="single-input">
+            <label>Waktu Pengukuran (Jam WIB)</label>
+            <input type="number" id="waktu_wib" value="14" min="0" max="23" oninput="updateInfoUTC()">
+          </div>
+          <div class="single-input">
+            <label>Bujur Daerah (°)</label>
+            <input type="number" id="lon_daerah" value="105">
+          </div>
+        </div>
+
+        <!-- Badge Keterangan UTC Auto -->
+        <div class="utc-badge" id="utc_info_box">
+          <span><strong>Konversi UTC/GMT Auto:</strong></span>
+          <span id="text_utc_1">• Data Jam Ke-1: Jam 14 WIB - 7 = <strong>7.00 GMT</strong></span>
+          <span id="text_utc_2">• Data Jam Ke-2: Jam 7 GMT + 1 = <strong>8.00 GMT</strong></span>
+        </div>
+
+        <div class="card-title" style="margin-top: 1rem;">
+          <span>☀️ Parameter Ephemeris (Input Sesuai Jam GMT)</span>
+        </div>
+
+        <!-- Deklinasi Jam UTC Ke-1 -->
+        <div class="form-row">
+          <label id="lbl_dek1">Deklinasi Matahari (Jam UTC 1)</label>
+          <div class="dms-inputs">
+            <div class="input-wrapper"><input type="number" id="dek1_d" value="20"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="dek1_m" value="5"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="dek1_s" value="30" step="any"><span class="unit">"</span></div>
+          </div>
+        </div>
+
+        <!-- Deklinasi Jam UTC Ke-2 -->
+        <div class="form-row">
+          <label id="lbl_dek2">Deklinasi Matahari (Jam UTC 2)</label>
+          <div class="dms-inputs">
+            <div class="input-wrapper"><input type="number" id="dek2_d" value="20"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="dek2_m" value="5"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="dek2_s" value="0" step="any"><span class="unit">"</span></div>
+          </div>
+        </div>
+
+        <!-- Equation of Time Jam UTC Ke-1 -->
+        <div class="form-row">
+          <label id="lbl_eq1">Equation of Time / EQ (Jam UTC 1)</label>
+          <div class="dms-inputs">
+            <div class="input-wrapper"><input type="number" id="eq1_d" value="0"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="eq1_m" value="-6"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="eq1_s" value="-32" step="any"><span class="unit">"</span></div>
+          </div>
+        </div>
+
+        <!-- Equation of Time Jam UTC Ke-2 -->
+        <div class="form-row">
+          <label id="lbl_eq2">Equation of Time / EQ (Jam UTC 2)</label>
+          <div class="dms-inputs">
+            <div class="input-wrapper"><input type="number" id="eq2_d" value="0"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="eq2_m" value="-6"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="eq2_s" value="-32" step="any"><span class="unit">"</span></div>
+          </div>
+        </div>
+
+        <button class="btn-calculate" onclick="hitungMizwala()">Hitung Mizwala</button>
+      </div>
+
+      <!-- Panel Hasil Utama -->
+      <div class="card">
+        <div class="card-title">
+          <span>🕋 Ringkasan Arah Kiblat</span>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="label">Selisih Bujur (Δλ)</div>
+            <div class="val-dms" id="res_sb_dms">-</div>
+            <div class="val-dec" id="res_sb_dec">-</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="label">Arah Kiblat (B)</div>
+            <div class="val-dms" id="res_ak_dms">-</div>
+            <div class="val-dec" id="res_ak_dec">-</div>
+          </div>
+
+          <div class="summary-card" style="grid-column: 1 / -1; background-color: rgba(16, 185, 129, 0.1); border-color: var(--accent);">
+            <div class="label" style="color: var(--accent); font-weight: 600;">Azimut Kiblat (AZQ)</div>
+            <div class="val-dms" style="font-size: 1.5rem; color: #fff;" id="res_azq_dms">-</div>
+            <div class="val-dec" style="font-size: 0.9rem;" id="res_azq_dec">-</div>
+          </div>
+        </div>
+
+        <!-- Parameter Tetap Ka'bah -->
+        <div style="font-size: 0.8rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; line-height: 1.6;">
+          <strong>Konstanta & Catatan Perhitungan:</strong><br>
+          • Lintang Ka'bah (Φk): 21° 25' 21.17" N (21.422547°)<br>
+          • Bujur Ka'bah (λk): 39° 49' 34.28" E (39.826189°)<br>
+          • Formula Jam UTC: Jam WIB - 7<br>
+          • Interpolasi Deklinasi & EQ berjalan dinamis per menit (0–59 menit).
+        </div>
+      </div>
+
+      <!-- Tabel Perhitungan Per Menit -->
+      <div class="card table-card">
+        <div class="card-title">
+          <span>📊 Tabel Simulasi Mizwala Tiap Menit (0 - 59 Menit)</span>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Menit</th>
+                <th>Deklinasi</th>
+                <th>EQ</th>
+                <th>t (Sudut Waktu)</th>
+                <th>A (Sudut A)</th>
+                <th>Mizwah</th>
+                <th>BA (Bayangan Azimut)</th>
+              </tr>
+            </thead>
+            <tbody id="table_body">
+              <!-- Baris hasil JS akan masuk ke sini -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Update Info Label UTC saat Jam WIB Diubah
+    function updateInfoUTC() {
+      const jamWib = parseFloat(document.getElementById('waktu_wib').value) || 0;
+      let jamUtc1 = jamWib - 7;
+      if (jamUtc1 < 0) jamUtc1 += 24; // Handel jam melintasi tengah malam
+
+      const jamUtc2 = (jamUtc1 + 1) % 24;
+
+      document.getElementById('text_utc_1').innerHTML = `• Data Jam Ke-1: Jam ${jamWib} WIB - 7 = <strong>${jamUtc1}.00 GMT</strong>`;
+      document.getElementById('text_utc_2').innerHTML = `• Data Jam Ke-2: Jam ${jamUtc1} GMT + 1 = <strong>${jamUtc2}.00 GMT</strong>`;
+
+      document.getElementById('lbl_dek1').innerText = `Deklinasi Matahari (Jam ${jamUtc1}.00 GMT)`;
+      document.getElementById('lbl_dek2').innerText = `Deklinasi Matahari (Jam ${jamUtc2}.00 GMT)`;
+      
+      document.getElementById('lbl_eq1').innerText = `Equation of Time / EQ (Jam ${jamUtc1}.00 GMT)`;
+      document.getElementById('lbl_eq2').innerText = `Equation of Time / EQ (Jam ${jamUtc2}.00 GMT)`;
+    }
+
+    // Konversi DMS ke Desimal
+    function dmsToDec(d, m, s) {
+      const sign = (d < 0 || Object.is(d, -0) || m < 0 || s < 0) ? -1 : 1;
+      return sign * (Math.abs(d) + Math.abs(m) / 60 + Math.abs(s) / 3600);
+    }
+
+    // Konversi Desimal ke Format String DMS (° ' ")
+    function decToDmsStr(val) {
+      const sign = val < 0 ? "-" : "";
+      const absVal = Math.abs(val);
+      const d = Math.floor(absVal);
+      const mVal = (absVal - d) * 60;
+      const m = Math.floor(mVal);
+      const s = ((mVal - m) * 60).toFixed(2);
+      
+      const pad = (num) => String(num).padStart(2, '0');
+      return `${sign}${d}° ${pad(m)}' ${String(s).padStart(5, '0')}"`;
+    }
+
+    function hitungMizwala() {
+      // 1. Parameter Tempat & Waktu
+      const lat_d = parseFloat(document.getElementById('lat_d').value) || 0;
+      const lat_m = parseFloat(document.getElementById('lat_m').value) || 0;
+      const lat_s = parseFloat(document.getElementById('lat_s').value) || 0;
+      const lat_tempat = dmsToDec(lat_d, lat_m, lat_s);
+
+      const lon_d = parseFloat(document.getElementById('lon_d').value) || 0;
+      const lon_m = parseFloat(document.getElementById('lon_m').value) || 0;
+      const lon_s = parseFloat(document.getElementById('lon_s').value) || 0;
+      const lon_tempat = dmsToDec(lon_d, lon_m, lon_s);
+
+      const waktu_wib = parseFloat(document.getElementById('waktu_wib').value) || 0;
+      const lon_daerah = parseFloat(document.getElementById('lon_daerah').value) || 0;
+
+      // 2. Deklinasi Jam UTC 1 & 2
+      const dek1_d = parseFloat(document.getElementById('dek1_d').value) || 0;
+      const dek1_m = parseFloat(document.getElementById('dek1_m').value) || 0;
+      const dek1_s = parseFloat(document.getElementById('dek1_s').value) || 0;
+      const dek1 = dmsToDec(dek1_d, dek1_m, dek1_s);
+
+      const dek2_d = parseFloat(document.getElementById('dek2_d').value) || 0;
+      const dek2_m = parseFloat(document.getElementById('dek2_m').value) || 0;
+      const dek2_s = parseFloat(document.getElementById('dek2_s').value) || 0;
+      const dek2 = dmsToDec(dek2_d, dek2_m, dek2_s);
+
+      // 3. EQ Jam UTC 1 & 2
+      const eq1_d = parseFloat(document.getElementById('eq1_d').value) || 0;
+      const eq1_m = parseFloat(document.getElementById('eq1_m').value) || 0;
+      const eq1_s = parseFloat(document.getElementById('eq1_s').value) || 0;
+      const eq1 = dmsToDec(eq1_d, eq1_m, eq1_s);
+
+      const eq2_d = parseFloat(document.getElementById('eq2_d').value) || 0;
+      const eq2_m = parseFloat(document.getElementById('eq2_m').value) || 0;
+      const eq2_s = parseFloat(document.getElementById('eq2_s').value) || 0;
+      const eq2 = dmsToDec(eq2_d, eq2_m, eq2_s);
+
+      // 4. Data Tetap Ka'bah
+      const lat_kabah = dmsToDec(21, 25, 21.17);
+      const lon_kabah = dmsToDec(39, 49, 34.28);
+
+      // 5. Hitung Selisih Bujur & Arah Kiblat
+      const selisih_bujur = lon_tempat - lon_kabah;
+      
+      const rad = (deg) => deg * Math.PI / 180;
+      const deg = (rad) => rad * 180 / Math.PI;
+
+      const phi = rad(lat_tempat);
+      const phi_k = rad(lat_kabah);
+      const d_lon = rad(selisih_bujur);
+
+      const cot_B = (Math.sin(phi) * Math.cos(d_lon) - Math.tan(phi_k) * Math.cos(phi)) / Math.sin(d_lon);
+      const arah_kiblat = Math.abs(deg(Math.atan(1 / cot_B)));
+      const azq = 360 - arah_kiblat;
+
+      // Tampilkan Ringkasan
+      document.getElementById('res_sb_dms').innerText = decToDmsStr(selisih_bujur);
+      document.getElementById('res_sb_dec').innerText = selisih_bujur.toFixed(6) + '°';
+
+      document.getElementById('res_ak_dms').innerText = decToDmsStr(arah_kiblat);
+      document.getElementById('res_ak_dec').innerText = arah_kiblat.toFixed(6) + '°';
+
+      document.getElementById('res_azq_dms').innerText = decToDmsStr(azq);
+      document.getElementById('res_azq_dec').innerText = azq.toFixed(6) + '°';
+
+      // 6. Generate Tabel 0-59 Menit dengan Interpolasi Dinamis
+      const tbody = document.getElementById('table_body');
+      tbody.innerHTML = '';
+
+      for (let m = 0; m < 60; m++) {
+        // Interpolasi Deklinasi dan EQ per menit
+        const dek = dek1 + (m / 60) * (dek2 - dek1);
+        const eq = eq1 + (m / 60) * (eq2 - eq1);
+
+        // Hitung Sudut Waktu (t) berdasarkan Waktu WIB
+        const t = (waktu_wib + (m / 60) - 12 + (lon_tempat - lon_daerah) / 15 + eq) * 15;
+
+        // Hitung Sudut A
+        const t_rad = rad(t);
+        const d_rad = rad(dek);
+        const cot_A = (Math.sin(phi) * Math.cos(t_rad) - Math.tan(d_rad) * Math.cos(phi)) / Math.sin(t_rad);
+        const A = Math.abs(deg(Math.atan(1 / cot_A)));
+
+        const mizwah = 180 + A;
+        const ba = azq - A;
+
+        // Render Baris Tabel
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${m}</strong></td>
+          <td>${decToDmsStr(dek)}</td>
+          <td>${decToDmsStr(eq)}</td>
+          <td>${decToDmsStr(t)}</td>
+          <td>${decToDmsStr(A)}</td>
+          <td>${decToDmsStr(mizwah)}</td>
+          <td class="highlight-cell">${decToDmsStr(ba)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Inisialisasi awal saat pertama load
+    window.onload = function() {
+      updateInfoUTC();
+      hitungMizwala();
+    };
+  </script>
+</body>
+</html>
