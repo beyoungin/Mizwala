@@ -93,6 +93,43 @@
       align-items: center;
     }
 
+    /* GPS Control Panel */
+    .gps-panel {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px dashed var(--blue-info);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-gps {
+      background-color: var(--blue-info);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-gps:hover {
+      background-color: #2563eb;
+    }
+
+    .gps-status {
+      font-size: 0.8rem;
+      color: #93c5fd;
+    }
+
     /* Input Styling */
     .form-row {
       margin-bottom: 1.1rem;
@@ -160,9 +197,9 @@
 
     /* Info Badge UTC */
     .utc-badge {
-      background-color: rgba(59, 130, 246, 0.15);
-      border: 1px solid var(--blue-info);
-      color: #93c5fd;
+      background-color: rgba(245, 158, 11, 0.1);
+      border: 1px solid var(--gold);
+      color: #fde68a;
       padding: 10px 12px;
       border-radius: 8px;
       font-size: 0.85rem;
@@ -172,11 +209,7 @@
       gap: 4px;
     }
 
-    .utc-badge strong {
-      color: #3b82f6;
-    }
-
-    /* Button */
+    /* Button Calculate */
     .btn-calculate {
       width: 100%;
       padding: 12px;
@@ -302,7 +335,7 @@
   <div class="container">
     <header>
       <h1><span>Mizwala</span> & Rashdul Qibla Calculator</h1>
-      <p>Simulasi Azimut Bayangan Matahari dengan Konversi Waktu WIB ke UTC/GMT</p>
+      <p>Simulasi Azimut Bayangan Matahari dengan Konversi WIB ke UTC & GPS Otomatis</p>
     </header>
 
     <div class="dashboard-grid">
@@ -311,6 +344,12 @@
       <div class="card">
         <div class="card-title">
           <span>📍 Parameter Tempat & Waktu WIB</span>
+        </div>
+
+        <!-- Tombol GPS Otomatis -->
+        <div class="gps-panel">
+          <button class="btn-gps" onclick="deteksiGPS()">📡 Gunakan Lokasi Saya (GPS)</button>
+          <div class="gps-status" id="gps_status">Tekan tombol di atas untuk mengisi Lintang & Bujur secara otomatis dari perangkat.</div>
         </div>
 
         <!-- Lintang Tempat -->
@@ -347,7 +386,7 @@
 
         <!-- Badge Keterangan UTC Auto -->
         <div class="utc-badge" id="utc_info_box">
-          <span><strong>Konversi UTC/GMT Auto:</strong></span>
+          <span><strong>🕒 Konversi UTC/GMT Auto:</strong></span>
           <span id="text_utc_1">• Data Jam Ke-1: Jam 14 WIB - 7 = <strong>7.00 GMT</strong></span>
           <span id="text_utc_2">• Data Jam Ke-2: Jam 7 GMT + 1 = <strong>8.00 GMT</strong></span>
         </div>
@@ -430,8 +469,8 @@
           <strong>Konstanta & Catatan Perhitungan:</strong><br>
           • Lintang Ka'bah (Φk): 21° 25' 21.17" N (21.422547°)<br>
           • Bujur Ka'bah (λk): 39° 49' 34.28" E (39.826189°)<br>
-          • Formula Jam UTC: Jam WIB - 7<br>
-          • Interpolasi Deklinasi & EQ berjalan dinamis per menit (0–59 menit).
+          • Formula Jam UTC: $\text{Jam WIB} - 7$<br>
+          • GPS Otomatis: Mengubah koordinat desimal browser ke format Deg-Min-Sec.
         </div>
       </div>
 
@@ -465,11 +504,70 @@
   </div>
 
   <script>
+    // Konversi Desimal ke Objek {d, m, s}
+    function decToDmsObj(val) {
+      const sign = val < 0 ? -1 : 1;
+      const absVal = Math.abs(val);
+      const d = Math.floor(absVal) * sign;
+      const mVal = (absVal - Math.floor(absVal)) * 60;
+      const m = Math.floor(mVal);
+      const s = parseFloat(((mVal - m) * 60).toFixed(2));
+      return { d, m, s };
+    }
+
+    // Fungsi Ambil Lokasi via GPS Browser
+    function deteksiGPS() {
+      const statusText = document.getElementById('gps_status');
+      if ("geolocation" in navigator) {
+        statusText.innerText = "⏳ Meminta izin GPS dan mengambil koordinat...";
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+
+            const latDMS = decToDmsObj(lat);
+            const lonDMS = decToDmsObj(lon);
+
+            // Isikan ke form Lintang
+            document.getElementById('lat_d').value = latDMS.d;
+            document.getElementById('lat_m').value = latDMS.m;
+            document.getElementById('lat_s').value = latDMS.s;
+
+            // Isikan ke form Bujur
+            document.getElementById('lon_d').value = lonDMS.d;
+            document.getElementById('lon_m').value = lonDMS.m;
+            document.getElementById('lon_s').value = lonDMS.s;
+
+            statusText.innerHTML = `✅ Lokasi berhasil didapatkan: <strong>${lat.toFixed(5)}°, ${lon.toFixed(5)}°</strong>`;
+            hitungMizwala(); // Hitung ulang otomatis
+          },
+          (error) => {
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                statusText.innerText = "❌ Izin GPS ditolak oleh pengguna.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                statusText.innerText = "❌ Informasi lokasi tidak tersedia.";
+                break;
+              case error.TIMEOUT:
+                statusText.innerText = "❌ Waktu permintaan lokasi habis.";
+                break;
+              default:
+                statusText.innerText = "❌ Terjadi kesalahan saat mengambil lokasi.";
+            }
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        statusText.innerText = "❌ Browser kamu tidak mendukung fitur GPS Geolocation.";
+      }
+    }
+
     // Update Info Label UTC saat Jam WIB Diubah
     function updateInfoUTC() {
       const jamWib = parseFloat(document.getElementById('waktu_wib').value) || 0;
       let jamUtc1 = jamWib - 7;
-      if (jamUtc1 < 0) jamUtc1 += 24; // Handel jam melintasi tengah malam
+      if (jamUtc1 < 0) jamUtc1 += 24;
 
       const jamUtc2 = (jamUtc1 + 1) % 24;
 
@@ -572,14 +670,11 @@
       tbody.innerHTML = '';
 
       for (let m = 0; m < 60; m++) {
-        // Interpolasi Deklinasi dan EQ per menit
         const dek = dek1 + (m / 60) * (dek2 - dek1);
         const eq = eq1 + (m / 60) * (eq2 - eq1);
 
-        // Hitung Sudut Waktu (t) berdasarkan Waktu WIB
         const t = (waktu_wib + (m / 60) - 12 + (lon_tempat - lon_daerah) / 15 + eq) * 15;
 
-        // Hitung Sudut A
         const t_rad = rad(t);
         const d_rad = rad(dek);
         const cot_A = (Math.sin(phi) * Math.cos(t_rad) - Math.tan(d_rad) * Math.cos(phi)) / Math.sin(t_rad);
@@ -588,7 +683,6 @@
         const mizwah = 180 + A;
         const ba = azq - A;
 
-        // Render Baris Tabel
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td><strong>${m}</strong></td>
