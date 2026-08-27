@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kalkulator Mizwala - Live NASA JPL Ephemeris</title>
+  <title>Kalkulator Mizwala - Auto Ephemeris NASA JPL</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -41,10 +41,6 @@
     .input-wrapper input:focus, .single-input input:focus { border-color: var(--accent); }
     .input-wrapper .unit { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem; }
 
-    .badge-auto { background-color: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue-info); color: #93c5fd; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 4px; }
-    .btn-nasa { width: 100%; padding: 12px; background-color: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
-    .btn-nasa:hover { background-color: var(--accent-hover); color: #fff; }
-
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .summary-card { background-color: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
     .summary-card .val-dms { font-size: 1.1rem; font-weight: 700; color: var(--gold); }
@@ -63,8 +59,8 @@
 
   <div class="container">
     <header>
-      <h1><span>Mizwala</span> Live NASA Ephemeris</h1>
-      <p>Kalkulator Rashdul Qibla Berbasis Data NASA JPL Horizons</p>
+      <h1><span>Mizwala</span> Auto Ephemeris</h1>
+      <p>Kalkulator Rashdul Qibla Berbasis NASA JPL Horizons</p>
     </header>
 
     <div class="dashboard-grid">
@@ -76,11 +72,11 @@
         <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="single-input">
             <label>Tanggal Matahari</label>
-            <input type="date" id="tgl_input">
+            <input type="date" id="tgl_input" onchange="fetchNasaApi()">
           </div>
           <div class="single-input">
             <label>Jam WIB (0 - 23)</label>
-            <input type="number" id="waktu_wib" value="14" min="0" max="23">
+            <input type="number" id="waktu_wib" value="14" min="0" max="23" oninput="fetchNasaApi()">
           </div>
         </div>
 
@@ -88,9 +84,9 @@
         <div class="form-row">
           <label>Lintang Tempat (Φ)</label>
           <div class="dms-inputs">
-            <div class="input-wrapper"><input type="number" id="lat_d" value="-7"><span class="unit">°</span></div>
-            <div class="input-wrapper"><input type="number" id="lat_m" value="8" min="0"><span class="unit">'</span></div>
-            <div class="input-wrapper"><input type="number" id="lat_s" value="8.5" min="0" step="any"><span class="unit">"</span></div>
+            <div class="input-wrapper"><input type="number" id="lat_d" value="-7" oninput="hitungMizwala()"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="lat_m" value="8" min="0" oninput="hitungMizwala()"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="lat_s" value="8.5" min="0" step="any" oninput="hitungMizwala()"><span class="unit">"</span></div>
           </div>
         </div>
 
@@ -98,23 +94,16 @@
         <div class="form-row">
           <label>Bujur Tempat (λ)</label>
           <div class="dms-inputs">
-            <div class="input-wrapper"><input type="number" id="lon_d" value="110"><span class="unit">°</span></div>
-            <div class="input-wrapper"><input type="number" id="lon_m" value="23" min="0"><span class="unit">'</span></div>
-            <div class="input-wrapper"><input type="number" id="lon_s" value="40.6" min="0" step="any"><span class="unit">"</span></div>
+            <div class="input-wrapper"><input type="number" id="lon_d" value="110" oninput="hitungMizwala()"><span class="unit">°</span></div>
+            <div class="input-wrapper"><input type="number" id="lon_m" value="23" min="0" oninput="hitungMizwala()"><span class="unit">'</span></div>
+            <div class="input-wrapper"><input type="number" id="lon_s" value="40.6" min="0" step="any" oninput="hitungMizwala()"><span class="unit">"</span></div>
           </div>
         </div>
 
         <div class="single-input form-row">
           <label>Bujur Daerah (°)</label>
-          <input type="number" id="lon_daerah" value="105">
+          <input type="number" id="lon_daerah" value="105" oninput="hitungMizwala()">
         </div>
-
-        <div class="badge-auto" id="ephemeris_info">
-          <span><strong>📡 Status Data NASA:</strong></span>
-          <span id="text_status">Belum diambil. Klik tombol di bawah untuk menyinkronkan data NASA JPL.</span>
-        </div>
-
-        <button class="btn-nasa" onclick="fetchNasaApi()">🚀 Ambil Data Matahari NASA & Hitung</button>
       </div>
 
       <!-- Panel Hasil Utama -->
@@ -142,7 +131,7 @@
         </div>
 
         <div style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; line-height: 1.5; color: var(--text-muted);">
-          <strong>Data Matahari NASA JPL Diterima:</strong><br>
+          <strong>Data Matahari Terpasang:</strong><br>
           • <span id="lbl_dek1">Deklinasi UTC 1</span>: <span id="val_dek1_str" style="color: var(--gold);">-</span><br>
           • <span id="lbl_dek2">Deklinasi UTC 2</span>: <span id="val_dek2_str" style="color: var(--gold);">-</span><br>
           • <span id="lbl_eq1">EQ UTC 1</span>: <span id="val_eq1_str" style="color: var(--gold);">-</span><br>
@@ -158,8 +147,8 @@
             <thead>
               <tr>
                 <th>Menit</th>
-                <th>Deklinasi (NASA)</th>
-                <th>EQ (NASA)</th>
+                <th>Deklinasi</th>
+                <th>EQ</th>
                 <th>t (Sudut Waktu)</th>
                 <th>A (Sudut A)</th>
                 <th>Mizwah</th>
@@ -178,7 +167,7 @@
     let global_dek1 = 0, global_dek2 = 0;
     let global_eq1 = 0, global_eq2 = 0;
 
-    // Set Default Tanggal Hari Ini
+    // Set Tanggal Hari Ini Sesuai Jam Komputer
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -194,18 +183,11 @@
     }
 
     async function fetchNasaApi() {
-      const statusText = document.getElementById('text_status');
       const tglVal = document.getElementById('tgl_input').value;
       const jamWib = parseFloat(document.getElementById('waktu_wib').value) || 0;
 
-      if (!tglVal) {
-        alert("Pilih tanggal terlebih dahulu!");
-        return;
-      }
+      if (!tglVal) return;
 
-      statusText.innerHTML = "⏳ Menghubungi Server NASA JPL Horizons...";
-
-      // Waktu UTC1 dan UTC2
       const parts = tglVal.split('-');
       const d1 = new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), jamWib - 7, 0, 0));
       const d2 = new Date(d1.getTime() + 3600 * 1000);
@@ -215,7 +197,6 @@
       const start_time = `${d1_str} ${String(d1.getUTCHours()).padStart(2,'0')}:00`;
       const stop_time = `${d2_str} ${String(d2.getUTCHours()).padStart(2,'0')}:30`;
 
-      // API JPL Horizons untuk Matahari (COMMAND='10'), Center Earth (500@399), Ephem Observer (QUANTITIES='1,18')
       const targetUrl = `https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='10'&CENTER='500@399'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&START_TIME='${start_time}'&STOP_TIME='${stop_time}'&STEP_SIZE='1h'&QUANTITIES='1,18'`;
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
@@ -223,7 +204,6 @@
         const response = await fetch(proxyUrl);
         const textData = await response.text();
 
-        // Parse Blok Teks NASA di antara $$SOE dan $$EOE
         const soeIndex = textData.indexOf('$$SOE');
         const eoeIndex = textData.indexOf('$$EOE');
 
@@ -232,7 +212,6 @@
           const lines = rawBlock.split('\n').filter(line => line.trim().length > 0);
 
           if (lines.length >= 2) {
-            // Parser Baris 1 (UTC 1) & Baris 2 (UTC 2)
             const ephem1 = extractDecAndEqFromJplLine(lines[0]);
             const ephem2 = extractDecAndEqFromJplLine(lines[1]);
 
@@ -241,25 +220,25 @@
             global_dek2 = ephem2.dec;
             global_eq2 = ephem2.eq;
 
-     
+            updateUiEphemeris(d1.getUTCHours(), d2.getUTCHours());
+            hitungMizwala();
+            return;
+          }
+        }
+        throw new Error();
+      } catch (err) {
+        fallbackMeeus(d1, d2);
       }
     }
 
     function extractDecAndEqFromJplLine(line) {
-      // Regex parsing standar format Observer JPL Horizons
-      // Contoh baris: 2026-Aug-27 07:00  10 24 12.30 +10 05 12.1 ...
       const cleanLine = line.trim().replace(/\s+/g, ' ');
       const tokens = cleanLine.split(' ');
 
-      // Token index: 0=Date, 1=Time, 2=RA_h, 3=RA_m, 4=RA_s, 5=DEC_d, 6=DEC_m, 7=DEC_s
       const dec = parseDmsStringToDec(tokens[5], tokens[6], tokens[7]);
-
-      // Perhitungan sederhana EQ (Equation of Time) dari RA NASA
       const raHours = parseFloat(tokens[2]) + parseFloat(tokens[3])/60 + parseFloat(tokens[4])/3600;
-      const dateParts = tokens[0].split('-');
       const hourPart = parseFloat(tokens[1].split(':')[0]);
       
-      // Sudut waktu rata-rata Matahari
       const solarTimeDeg = (hourPart * 15) + (raHours * 15);
       let eq_deg = (solarTimeDeg % 360) / 15;
       if (eq_deg > 12) eq_deg -= 24;
@@ -388,6 +367,7 @@
       }
     }
 
+    // Otomatis Ambil Data NASA & Hitung Saat Pertama Kali Dimuat
     window.onload = function() {
       fetchNasaApi();
     };
