@@ -335,117 +335,172 @@
     }
 
     // CANVAS DRAWING SIMULATOR MIZWALA
-    function drawMizwalaCanvas() {
-      const canvas = document.getElementById('mizwalaCanvas');
-      const ctx = canvas.getContext('2d');
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-      const radius = 150;
+   function drawMizwalaCanvas() {
+  const canvas = document.getElementById('mizwalaCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Resolusi Canvas diperbesar agar rendering garis 1 derajat terlihat sangat halus
+  canvas.width = 480;
+  canvas.height = 480;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const outerRingRadius = 210; // Ring putih tempat angka
+  const yellowRadius = 165;    // Papan utama dial kuning
 
-      // 1. Gambar Kayu Landasan Mizwala (Segi delapan / Hexagon luar)
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 1. Base Octagon / Acrylic Base Board (Landasan Putih Akrilik Segi delapan)
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * 45 + 22.5) * Math.PI / 180;
+    const x = cx + (outerRingRadius + 22) * Math.cos(angle);
+    const y = cy + (outerRingRadius + 22) * Math.sin(angle);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = "#e2e8f0";
+  ctx.fill();
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // 2. Ring Skala Luar (Warna Putih/Krem untuk Angka & Garis Presisi)
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerRingRadius, 0, 2 * Math.PI);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  ctx.strokeStyle = "#334155";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 3. Papan Tengah Mizwala (Warna Kuning Khas Mizwala)
+  ctx.beginPath();
+  ctx.arc(cx, cy, yellowRadius, 0, 2 * Math.PI);
+  ctx.fillStyle = "#eab308";
+  ctx.fill();
+  ctx.strokeStyle = "#1e293b";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 4. Lingkaran Konsentris di Papan Kuning (Grid Pengukur Panjang Bayangan)
+  for (let r = 25; r < yellowRadius; r += 15) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+    ctx.strokeStyle = "rgba(30, 41, 59, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // 5. Drawing Skala 360 Derajat (Detail Garis 1°, 5°, dan 10°)
+  ctx.fillStyle = "#0f172a";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (let deg = 0; deg < 360; deg++) {
+    // Rotasi 0° berada di posisi Atas (Utara)
+    const rad = (deg - 90) * Math.PI / 180;
+    let lineStartR = outerRingRadius;
+    let lineEndR = yellowRadius;
+
+    if (deg % 10 === 0) {
+      // Kelipatan 10: Garis Panjang Penuh melintasi Ring Luar
+      lineStartR = outerRingRadius;
+      lineEndR = yellowRadius;
+
+      // Garis Jari-jari tambahan sampai ke pusat papan kuning
       ctx.beginPath();
-      for (let i = 0; i < 8; i++) {
-        const angle = (i * 45) * Math.PI / 180;
-        const x = cx + (radius + 20) * Math.cos(angle);
-        const y = cy + (radius + 20) * Math.sin(angle);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.closePath();
-      ctx.fillStyle = "#854d0e";
-      ctx.fill();
-      ctx.strokeStyle = "#a16207";
-      ctx.lineWidth = 4;
+      ctx.moveTo(cx + yellowRadius * Math.cos(rad), cy + yellowRadius * Math.sin(rad));
+      ctx.lineTo(cx + 20 * Math.cos(rad), cy + 20 * Math.sin(rad));
+      ctx.strokeStyle = "rgba(15, 23, 42, 0.4)";
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      // 2. Gambar Dial Kuning Mizwala (360 derajat)
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = "#facc15";
-      ctx.fill();
-      ctx.strokeStyle = "#ca8a04";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      // Garis Skala Derajat pada Dial
-      ctx.fillStyle = "#1e293b";
-      ctx.font = "10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      for (let deg = 0; deg < 360; deg += 10) {
-        const rad = (deg - 90) * Math.PI / 180;
-        const innerR = radius - (deg % 30 === 0 ? 15 : 8);
-        const textR = radius - 24;
-
-        ctx.beginPath();
-        ctx.moveTo(cx + radius * Math.cos(rad), cy + radius * Math.sin(rad));
-        ctx.lineTo(cx + innerR * Math.cos(rad), cy + innerR * Math.sin(rad));
-        ctx.strokeStyle = "#451a03";
-        ctx.lineWidth = (deg % 30 === 0) ? 2 : 1;
-        ctx.stroke();
-
-        if (deg % 30 === 0) {
-          ctx.fillText(deg, cx + textR * Math.cos(rad), cy + textR * Math.sin(rad));
-        }
-      }
-
-      // 3. Garis Bayangan Gnomon Matahari (Mizwah)
-      const mizwahRad = (selectedMizwahDeg - 90) * Math.PI / 180;
-      const shadowLength = radius - 25;
+      // Cetak Angka Kelipatan 10 (0, 10, 20, 30 ... 350)
+      const textR = outerRingRadius - 14;
+      ctx.font = "bold 10px 'Segoe UI', sans-serif";
       
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + shadowLength * Math.cos(mizwahRad), cy + shadowLength * Math.sin(mizwahRad));
-      ctx.strokeStyle = "#0284c7";
-      ctx.lineWidth = 4;
-      ctx.stroke();
+      // Orientasi Angka Tegak Lurus
+      ctx.save();
+      ctx.translate(cx + textR * Math.cos(rad), cy + textR * Math.sin(rad));
+      ctx.rotate(rad + Math.PI / 2);
+      ctx.fillText(deg.toString(), 0, 0);
+      ctx.restore();
 
-      // Lingkaran Ujung Bayangan
-      ctx.beginPath();
-      ctx.arc(cx + shadowLength * Math.cos(mizwahRad), cy + shadowLength * Math.sin(mizwahRad), 6, 0, 2 * Math.PI);
-      ctx.fillStyle = "#38bdf8";
-      ctx.fill();
-
-      // 4. Panah Arah Kiblat (AZQ)
-      const kiblatRad = (selectedAzqDeg - 90) * Math.PI / 180;
-      const kiblatLen = radius - 35;
-
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
-      ctx.strokeStyle = "#ef4444";
-      ctx.lineWidth = 3;
-      ctx.setLineDash([5, 3]);
-      ctx.stroke();
-      ctx.setLineDash([]); // Reset line dash
-
-      // Ujung Panah Kiblat
-      const headLen = 12;
-      ctx.beginPath();
-      ctx.moveTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
-      ctx.lineTo(cx + (kiblatLen - headLen) * Math.cos(kiblatRad - 0.2), cy + (kiblatLen - headLen) * Math.sin(kiblatRad - 0.2));
-      ctx.lineTo(cx + (kiblatLen - headLen) * Math.cos(kiblatRad + 0.2), cy + (kiblatLen - headLen) * Math.sin(kiblatRad + 0.2));
-      ctx.fillStyle = "#ef4444";
-      ctx.fill();
-
-      // 5. Gnomon / Jarum Tengah Mizwala
-      ctx.beginPath();
-      ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
-      ctx.fillStyle = "#475569";
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
-      ctx.fillStyle = "#f8fafc";
-      ctx.fill();
-
-      // Teks Keterangan di Atas Canvas
-      ctx.fillStyle = "#f8fafc";
-      ctx.font = "bold 12px sans-serif";
-      ctx.fillText(`Bayangan Mizwah: ${selectedMizwahDeg.toFixed(1)}°`, cx, cy + radius + 25);
+    } else if (deg % 5 === 0) {
+      // Kelipatan 5: Garis Penanda Sedang
+      lineStartR = outerRingRadius;
+      lineEndR = yellowRadius + 12;
+    } else {
+      // Garis 1 Derajat Biasa: Garis Kecil/Pendek
+      lineStartR = outerRingRadius;
+      lineEndR = outerRingRadius - 8;
     }
 
+    // Gambar Garis Skala pada Ring
+    ctx.beginPath();
+    ctx.moveTo(cx + lineStartR * Math.cos(rad), cy + lineStartR * Math.sin(rad));
+    ctx.lineTo(cx + lineEndR * Math.cos(rad), cy + lineEndR * Math.sin(rad));
+    ctx.strokeStyle = "#0f172a";
+    ctx.lineWidth = (deg % 10 === 0) ? 1.5 : (deg % 5 === 0 ? 1.2 : 0.8);
+    ctx.stroke();
+  }
+
+  // 6. Visualisasi Bayangan Matahari (Mizwah)
+  const mizwahRad = (selectedMizwahDeg - 90) * Math.PI / 180;
+  const shadowLen = yellowRadius - 20;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + shadowLen * Math.cos(mizwahRad), cy + shadowLen * Math.sin(mizwahRad));
+  ctx.strokeStyle = "#0284c7";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Indikator Titik Bayangan Ujung Gnomon
+  ctx.beginPath();
+  ctx.arc(cx + shadowLen * Math.cos(mizwahRad), cy + shadowLen * Math.sin(mizwahRad), 5, 0, 2 * Math.PI);
+  ctx.fillStyle = "#38bdf8";
+  ctx.fill();
+
+  // 7. Visualisasi Panah Arah Kiblat (AZQ)
+  const kiblatRad = (selectedAzqDeg - 90) * Math.PI / 180;
+  const kiblatLen = yellowRadius - 35;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
+  ctx.strokeStyle = "#dc2626";
+  ctx.lineWidth = 35;
+  ctx.lineWidth = 3;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Ujung Panah Kiblat
+  const hLen = 12;
+  ctx.beginPath();
+  ctx.moveTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
+  ctx.lineTo(cx + (kiblatLen - hLen) * Math.cos(kiblatRad - 0.2), cy + (kiblatLen - hLen) * Math.sin(kiblatRad - 0.2));
+  ctx.lineTo(cx + (kiblatLen - hLen) * Math.cos(kiblatRad + 0.2), cy + (kiblatLen - hLen) * Math.sin(kiblatRad + 0.2));
+  ctx.fillStyle = "#dc2626";
+  ctx.fill();
+
+  // 8. Visualisasi Gnomon / Paku Tengah (Kuningan/Perak)
+  ctx.beginPath();
+  ctx.arc(cx, cy, 11, 0, 2 * Math.PI);
+  ctx.fillStyle = "#475569";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+  ctx.fillStyle = "#f8fafc";
+  ctx.fill();
+
+  // Label Keterangan Sudut Aktif
+  ctx.fillStyle = "#f8fafc";
+  ctx.font = "bold 12px sans-serif";
+  ctx.fillText(`Mizwah: ${selectedMizwahDeg.toFixed(2)}° | Kiblat: ${selectedAzqDeg.toFixed(2)}°`, cx, canvas.height - 12);
+}
     window.onload = function() {
       fetchNasaApi();
     };
