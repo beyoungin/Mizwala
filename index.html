@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kalkulator Mizwala - Auto Ephemeris NASA JPL</title>
+  <title>Kalkulator Mizwala & Visualisasi Simulator</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -13,9 +13,7 @@
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #10b981;
-      --accent-hover: #059669;
       --gold: #f59e0b;
-      --blue-info: #3b82f6;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; }
@@ -47,20 +45,27 @@
     .summary-card .val-dec { font-size: 0.8rem; color: var(--accent); }
 
     .table-card { margin-top: 1.5rem; grid-column: 1 / -1; }
-    .table-wrapper { max-height: 420px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border-color); }
+    .table-wrapper { max-height: 300px; overflow-y: auto; border-radius: 8px; border: 1px solid var(--border-color); }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     th { background-color: #0f172a; color: var(--accent); padding: 12px; position: sticky; top: 0; }
-    td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); }
-    tr:hover { background-color: rgba(16, 185, 129, 0.08); }
-    .highlight-cell { color: var(--gold); font-weight: 600; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); text-align: center; cursor: pointer; }
+    tr:hover { background-color: rgba(16, 185, 129, 0.15); }
+    .selected-row { background-color: rgba(245, 158, 11, 0.2) !important; }
+
+    /* Visualizer Section */
+    .canvas-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; background: rgba(15, 23, 42, 0.8); border-radius: 12px; border: 1px solid var(--border-color); margin-top: 1.5rem; }
+    #mizwalaCanvas { background-color: #0f172a; border-radius: 50%; box-shadow: 0 0 20px rgba(0,0,0,0.6); }
+    .canvas-legend { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; justify-content: center; font-size: 0.85rem; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-color { width: 14px; height: 14px; border-radius: 3px; }
   </style>
 </head>
 <body>
 
   <div class="container">
     <header>
-      <h1><span>Mizwala</span> Auto Ephemeris</h1>
-      <p>Kalkulator Rashdul Qibla Berbasis NASA JPL Horizons</p>
+      <h1><span>Mizwala</span> Auto Ephemeris & Visual Simulator</h1>
+      <p>Kalkulator Rashdul Qibla & Simulator Cara Pakai Papan Mizwala</p>
     </header>
 
     <div class="dashboard-grid">
@@ -131,17 +136,18 @@
         </div>
 
         <div style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; line-height: 1.5; color: var(--text-muted);">
-          <strong>Data Matahari Terpasang:</strong><br>
+          <strong>Data Ephemeris:</strong><br>
           • <span id="lbl_dek1">Deklinasi UTC 1</span>: <span id="val_dek1_str" style="color: var(--gold);">-</span><br>
-          • <span id="lbl_dek2">Deklinasi UTC 2</span>: <span id="val_dek2_str" style="color: var(--gold);">-</span><br>
-          • <span id="lbl_eq1">EQ UTC 1</span>: <span id="val_eq1_str" style="color: var(--gold);">-</span><br>
-          • <span id="lbl_eq2">EQ UTC 2</span>: <span id="val_eq2_str" style="color: var(--gold);">-</span>
+          • <span id="lbl_dek2">Deklinasi UTC 2</span>: <span id="val_dek2_str" style="color: var(--gold);">-</span>
         </div>
       </div>
 
       <!-- Tabel Perhitungan Per Menit -->
       <div class="card table-card">
-        <div class="card-title">📊 Tabel Simulasi Mizwala (0 - 59 Menit)</div>
+        <div class="card-title">
+          <span>📊 Tabel Simulasi Mizwala (Klik Baris Untuk Simulasi Gambar)</span>
+          <span style="font-size: 0.8rem; color: var(--gold);" id="sim_info">Menit Terpilih: 0</span>
+        </div>
         <div class="table-wrapper">
           <table>
             <thead>
@@ -158,6 +164,17 @@
             <tbody id="table_body"></tbody>
           </table>
         </div>
+
+        <!-- SIMULATOR ILUSTRASI MIZWALA -->
+        <div class="canvas-container">
+          <canvas id="mizwalaCanvas" width="380" height="380"></canvas>
+          <div class="canvas-legend">
+            <div class="legend-item"><div class="legend-color" style="background: #eab308;"></div> Dial Mizwala (360°)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div> Bayangan Gnomon (Mizwah)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div> Arah Kiblat (Ka'bah)</div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -166,60 +183,42 @@
   <script>
     let global_dek1 = 0, global_dek2 = 0;
     let global_eq1 = 0, global_eq2 = 0;
+    let selectedMizwahDeg = 0;
+    let selectedAzqDeg = 294.5;
 
-    // Set Tanggal Hari Ini Sesuai Jam Komputer
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    document.getElementById('tgl_input').value = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('tgl_input').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     function parseDmsStringToDec(degStr, minStr, secStr) {
-      const d = parseFloat(degStr) || 0;
-      const m = parseFloat(minStr) || 0;
-      const s = parseFloat(secStr) || 0;
-      const sign = degStr.includes('-') ? -1 : 1;
-      return sign * (Math.abs(d) + (m / 60) + (s / 3600));
+      const d = parseFloat(degStr) || 0, m = parseFloat(minStr) || 0, s = parseFloat(secStr) || 0;
+      return (degStr.includes('-') ? -1 : 1) * (Math.abs(d) + (m / 60) + (s / 3600));
     }
 
     async function fetchNasaApi() {
       const tglVal = document.getElementById('tgl_input').value;
       const jamWib = parseFloat(document.getElementById('waktu_wib').value) || 0;
-
       if (!tglVal) return;
 
+      document.getElementById('table_body').innerHTML = `<tr><td colspan="7">Memperbarui data NASA JPL...</td></tr>`;
       const parts = tglVal.split('-');
       const d1 = new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), jamWib - 7, 0, 0));
       const d2 = new Date(d1.getTime() + 3600 * 1000);
 
-      const d1_str = d1.toISOString().slice(0, 10);
-      const d2_str = d2.toISOString().slice(0, 10);
-      const start_time = `${d1_str} ${String(d1.getUTCHours()).padStart(2,'0')}:00`;
-      const stop_time = `${d2_str} ${String(d2.getUTCHours()).padStart(2,'0')}:30`;
-
+      const start_time = `${d1.toISOString().slice(0, 10)} ${String(d1.getUTCHours()).padStart(2,'0')}:00`;
+      const stop_time = `${d2.toISOString().slice(0, 10)} ${String(d2.getUTCHours()).padStart(2,'0')}:30`;
       const targetUrl = `https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='10'&CENTER='500@399'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&START_TIME='${start_time}'&STOP_TIME='${stop_time}'&STEP_SIZE='1h'&QUANTITIES='1,18'`;
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
       try {
-        const response = await fetch(proxyUrl);
+        const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
         const textData = await response.text();
-
-        const soeIndex = textData.indexOf('$$SOE');
-        const eoeIndex = textData.indexOf('$$EOE');
+        const soeIndex = textData.indexOf('$$SOE'), eoeIndex = textData.indexOf('$$EOE');
 
         if (soeIndex !== -1 && eoeIndex !== -1) {
-          const rawBlock = textData.substring(soeIndex + 5, eoeIndex).trim();
-          const lines = rawBlock.split('\n').filter(line => line.trim().length > 0);
-
+          const lines = textData.substring(soeIndex + 5, eoeIndex).trim().split('\n').filter(l => l.trim().length > 0);
           if (lines.length >= 2) {
-            const ephem1 = extractDecAndEqFromJplLine(lines[0]);
-            const ephem2 = extractDecAndEqFromJplLine(lines[1]);
-
-            global_dek1 = ephem1.dec;
-            global_eq1 = ephem1.eq;
-            global_dek2 = ephem2.dec;
-            global_eq2 = ephem2.eq;
-
+            const ephem1 = extractDecAndEq(lines[0]), ephem2 = extractDecAndEq(lines[1]);
+            global_dek1 = ephem1.dec; global_eq1 = ephem1.eq;
+            global_dek2 = ephem2.dec; global_eq2 = ephem2.eq;
             updateUiEphemeris(d1.getUTCHours(), d2.getUTCHours());
             hitungMizwala();
             return;
@@ -231,111 +230,71 @@
       }
     }
 
-    function extractDecAndEqFromJplLine(line) {
-      const cleanLine = line.trim().replace(/\s+/g, ' ');
-      const tokens = cleanLine.split(' ');
-
+    function extractDecAndEq(line) {
+      const tokens = line.trim().replace(/\s+/g, ' ').split(' ');
       const dec = parseDmsStringToDec(tokens[5], tokens[6], tokens[7]);
       const raHours = parseFloat(tokens[2]) + parseFloat(tokens[3])/60 + parseFloat(tokens[4])/3600;
-      const hourPart = parseFloat(tokens[1].split(':')[0]);
-      
-      const solarTimeDeg = (hourPart * 15) + (raHours * 15);
-      let eq_deg = (solarTimeDeg % 360) / 15;
-      if (eq_deg > 12) eq_deg -= 24;
-      if (eq_deg < -12) eq_deg += 24;
-
+      let eq_deg = (((parseFloat(tokens[1].split(':')[0]) * 15) + (raHours * 15)) % 360) / 15;
+      if (eq_deg > 12) eq_deg -= 24; if (eq_deg < -12) eq_deg += 24;
       return { dec: dec, eq: eq_deg };
     }
 
     function fallbackMeeus(d1, d2) {
-      const calcMeeus = (d) => {
-        const year = d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate() + (d.getUTCHours() / 24);
-        let y = year, mon = m;
-        if (mon <= 2) { y -= 1; mon += 12; }
-        const A = Math.floor(y / 100), B = 2 - A + Math.floor(A / 4);
-        const JD = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (mon + 1)) + day + B - 1524.5;
+      const calcM = (d) => {
+        const y = d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate() + (d.getUTCHours() / 24);
+        let Y = (m <= 2) ? y - 1 : y, M = (m <= 2) ? m + 12 : m;
+        const A = Math.floor(Y / 100), B = 2 - A + Math.floor(A / 4);
+        const JD = Math.floor(365.25 * (Y + 4716)) + Math.floor(30.6001 * (M + 1)) + day + B - 1524.5;
         const T = (JD - 2451545.0) / 36525.0;
-
         let L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
-        let M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
-        const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
-        const Mrad = M * Math.PI / 180;
-        const C = Math.sin(Mrad) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * Mrad) * (0.019993 - 0.000101 * T);
-        const sunLong = L0 + C;
-        const omega = 125.04 - 1934.136 * T;
-        const lambda = sunLong - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180);
+        let Mrad = (357.52911 + T * (35999.05029 - 0.0001537 * T)) * Math.PI / 180;
+        const sunLong = L0 + Math.sin(Mrad) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * Mrad) * (0.019993 - 0.000101 * T);
+        const lambda = sunLong - 0.00569 - 0.00478 * Math.sin((125.04 - 1934.136 * T) * Math.PI / 180);
         const obliq = 23.439291 - 0.0130042 * T;
-
         const dec = Math.asin(Math.sin(obliq * Math.PI / 180) * Math.sin(lambda * Math.PI / 180)) * 180 / Math.PI;
         const y_eq = Math.tan((obliq / 2) * Math.PI / 180) ** 2;
-        const L0rad = L0 * Math.PI / 180;
-        const EqT_min = 4 * (y_eq * Math.sin(2 * L0rad) - 2 * e * Math.sin(Mrad) + 4 * e * y_eq * Math.sin(Mrad) * Math.cos(2 * L0rad)) * (180 / Math.PI);
-
-        return { dec: dec, eq: EqT_min / 60 };
+        const EqT = 4 * (y_eq * Math.sin(2 * (L0 * Math.PI / 180)) - 2 * (0.016708634 - T * 0.000042037) * Math.sin(Mrad)) * (180 / Math.PI);
+        return { dec: dec, eq: EqT / 60 };
       };
-
-      const e1 = calcMeeus(d1), e2 = calcMeeus(d2);
-      global_dek1 = e1.dec; global_eq1 = e1.eq;
-      global_dek2 = e2.dec; global_eq2 = e2.eq;
+      const e1 = calcM(d1), e2 = calcM(d2);
+      global_dek1 = e1.dec; global_eq1 = e1.eq; global_dek2 = e2.dec; global_eq2 = e2.eq;
       updateUiEphemeris(d1.getUTCHours(), d2.getUTCHours());
       hitungMizwala();
     }
 
-    function updateUiEphemeris(utc1, utc2) {
-      document.getElementById('lbl_dek1').innerText = `Deklinasi (${utc1}.00 UTC)`;
-      document.getElementById('lbl_dek2').innerText = `Deklinasi (${utc2}.00 UTC)`;
-      document.getElementById('lbl_eq1').innerText = `EQ (${utc1}.00 UTC)`;
-      document.getElementById('lbl_eq2').innerText = `EQ (${utc2}.00 UTC)`;
-
+    function updateUiEphemeris(u1, u2) {
+      document.getElementById('lbl_dek1').innerText = `Deklinasi (${u1}.00 UTC)`;
+      document.getElementById('lbl_dek2').innerText = `Deklinasi (${u2}.00 UTC)`;
       document.getElementById('val_dek1_str').innerText = decToDmsStr(global_dek1);
       document.getElementById('val_dek2_str').innerText = decToDmsStr(global_dek2);
-      document.getElementById('val_eq1_str').innerText = decToDmsStr(global_eq1);
-      document.getElementById('val_eq2_str').innerText = decToDmsStr(global_eq2);
     }
 
-    function dmsToDec(d, m, s) {
-      const sign = d < 0 || Object.is(d, -0) ? -1 : 1;
-      return sign * (Math.abs(d) + Math.abs(m) / 60 + Math.abs(s) / 3600);
-    }
-
+    function dmsToDec(d, m, s) { return (d < 0 || Object.is(d, -0) ? -1 : 1) * (Math.abs(d) + Math.abs(m)/60 + Math.abs(s)/3600); }
     function decToDmsStr(val) {
-      const sign = val < 0 ? "-" : "";
-      const absVal = Math.abs(val);
-      const d = Math.floor(absVal);
-      const mVal = (absVal - d) * 60;
-      const m = Math.floor(mVal);
-      const s = ((mVal - m) * 60).toFixed(2);
-      const pad = (num) => String(num).padStart(2, '0');
-      return `${sign}${d}° ${pad(m)}' ${String(s).padStart(5, '0')}"`;
+      const absVal = Math.abs(val), d = Math.floor(absVal), mVal = (absVal - d) * 60, m = Math.floor(mVal), s = ((mVal - m) * 60).toFixed(2);
+      return `${val < 0 ? "-" : ""}${d}° ${String(m).padStart(2,'0')}' ${String(s).padStart(5,'0')}"`;
     }
 
     function hitungMizwala() {
-      const lat_tempat = dmsToDec(parseFloat(document.getElementById('lat_d').value)||0, parseFloat(document.getElementById('lat_m').value)||0, parseFloat(document.getElementById('lat_s').value)||0);
-      const lon_tempat = dmsToDec(parseFloat(document.getElementById('lon_d').value)||0, parseFloat(document.getElementById('lon_m').value)||0, parseFloat(document.getElementById('lon_s').value)||0);
+      const lat_t = dmsToDec(parseFloat(document.getElementById('lat_d').value)||0, parseFloat(document.getElementById('lat_m').value)||0, parseFloat(document.getElementById('lat_s').value)||0);
+      const lon_t = dmsToDec(parseFloat(document.getElementById('lon_d').value)||0, parseFloat(document.getElementById('lon_m').value)||0, parseFloat(document.getElementById('lon_s').value)||0);
       const waktu_wib = parseFloat(document.getElementById('waktu_wib').value) || 0;
       const lon_daerah = parseFloat(document.getElementById('lon_daerah').value) || 0;
 
-      const lat_kabah = dmsToDec(21, 25, 21.17);
-      const lon_kabah = dmsToDec(39, 49, 34.28);
-      const selisih_bujur = lon_tempat - lon_kabah;
+      const lat_k = dmsToDec(21, 25, 21.17), lon_k = dmsToDec(39, 49, 34.28);
+      const selisih_bujur = lon_t - lon_k;
 
-      const rad = (deg) => deg * Math.PI / 180;
-      const deg = (rad) => rad * 180 / Math.PI;
-
-      const phi = rad(lat_tempat);
-      const phi_k = rad(lat_kabah);
-      const d_lon = rad(selisih_bujur);
-
-      const cot_B = (Math.sin(phi) * Math.cos(d_lon) - Math.tan(phi_k) * Math.cos(phi)) / Math.sin(d_lon);
+      const rad = (deg) => deg * Math.PI / 180, deg = (rad) => rad * 180 / Math.PI;
+      const cot_B = (Math.sin(rad(lat_t)) * Math.cos(rad(selisih_bujur)) - Math.tan(rad(lat_k)) * Math.cos(rad(lat_t))) / Math.sin(rad(selisih_bujur));
       const arah_kiblat = Math.abs(deg(Math.atan(1 / cot_B)));
-      const azq = 360 - arah_kiblat;
+      selectedAzqDeg = 360 - arah_kiblat;
 
       document.getElementById('res_sb_dms').innerText = decToDmsStr(selisih_bujur);
       document.getElementById('res_sb_dec').innerText = selisih_bujur.toFixed(6) + '°';
       document.getElementById('res_ak_dms').innerText = decToDmsStr(arah_kiblat);
       document.getElementById('res_ak_dec').innerText = arah_kiblat.toFixed(6) + '°';
-      document.getElementById('res_azq_dms').innerText = decToDmsStr(azq);
-      document.getElementById('res_azq_dec').innerText = azq.toFixed(6) + '°';
+      document.getElementById('res_azq_dms').innerText = decToDmsStr(selectedAzqDeg);
+      document.getElementById('res_azq_dec').innerText = selectedAzqDeg.toFixed(6) + '°';
 
       const tbody = document.getElementById('table_body');
       tbody.innerHTML = '';
@@ -343,17 +302,24 @@
       for (let m = 0; m < 60; m++) {
         const dek = global_dek1 + (m / 60) * (global_dek2 - global_dek1);
         const eq = global_eq1 + (m / 60) * (global_eq2 - global_eq1);
-        const t = (waktu_wib + (m / 60) - 12 + (lon_tempat - lon_daerah) / 15 + eq) * 15;
-
-        const t_rad = rad(t);
-        const d_rad = rad(dek);
-        const cot_A = (Math.sin(phi) * Math.cos(t_rad) - Math.tan(d_rad) * Math.cos(phi)) / Math.sin(t_rad);
+        const t = (waktu_wib + (m / 60) - 12 + (lon_t - lon_daerah) / 15 + eq) * 15;
+        const cot_A = (Math.sin(rad(lat_t)) * Math.cos(rad(t)) - Math.tan(rad(dek)) * Math.cos(rad(lat_t))) / Math.sin(rad(t));
         const A = Math.abs(deg(Math.atan(1 / cot_A)));
-
         const mizwah = 180 + A;
-        const ba = azq - A;
+        const ba = selectedAzqDeg - A;
+
+        if(m === 0) selectedMizwahDeg = mizwah;
 
         const tr = document.createElement('tr');
+        if(m === 0) tr.classList.add('selected-row');
+        tr.onclick = function() {
+          document.querySelectorAll('#table_body tr').forEach(r => r.classList.remove('selected-row'));
+          tr.classList.add('selected-row');
+          document.getElementById('sim_info').innerText = `Menit Terpilih: ${m}`;
+          selectedMizwahDeg = mizwah;
+          drawMizwalaCanvas();
+        };
+
         tr.innerHTML = `
           <td><strong>${m}</strong></td>
           <td>${decToDmsStr(dek)}</td>
@@ -361,13 +327,125 @@
           <td>${decToDmsStr(t)}</td>
           <td>${decToDmsStr(A)}</td>
           <td>${decToDmsStr(mizwah)}</td>
-          <td class="highlight-cell">${decToDmsStr(ba)}</td>
+          <td style="color:var(--gold); font-weight:600;">${decToDmsStr(ba)}</td>
         `;
         tbody.appendChild(tr);
       }
+      drawMizwalaCanvas();
     }
 
-    // Otomatis Ambil Data NASA & Hitung Saat Pertama Kali Dimuat
+    // CANVAS DRAWING SIMULATOR MIZWALA
+    function drawMizwalaCanvas() {
+      const canvas = document.getElementById('mizwalaCanvas');
+      const ctx = canvas.getContext('2d');
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const radius = 150;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. Gambar Kayu Landasan Mizwala (Segi delapan / Hexagon luar)
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * 45) * Math.PI / 180;
+        const x = cx + (radius + 20) * Math.cos(angle);
+        const y = cy + (radius + 20) * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#854d0e";
+      ctx.fill();
+      ctx.strokeStyle = "#a16207";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // 2. Gambar Dial Kuning Mizwala (360 derajat)
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = "#facc15";
+      ctx.fill();
+      ctx.strokeStyle = "#ca8a04";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Garis Skala Derajat pada Dial
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let deg = 0; deg < 360; deg += 10) {
+        const rad = (deg - 90) * Math.PI / 180;
+        const innerR = radius - (deg % 30 === 0 ? 15 : 8);
+        const textR = radius - 24;
+
+        ctx.beginPath();
+        ctx.moveTo(cx + radius * Math.cos(rad), cy + radius * Math.sin(rad));
+        ctx.lineTo(cx + innerR * Math.cos(rad), cy + innerR * Math.sin(rad));
+        ctx.strokeStyle = "#451a03";
+        ctx.lineWidth = (deg % 30 === 0) ? 2 : 1;
+        ctx.stroke();
+
+        if (deg % 30 === 0) {
+          ctx.fillText(deg, cx + textR * Math.cos(rad), cy + textR * Math.sin(rad));
+        }
+      }
+
+      // 3. Garis Bayangan Gnomon Matahari (Mizwah)
+      const mizwahRad = (selectedMizwahDeg - 90) * Math.PI / 180;
+      const shadowLength = radius - 25;
+      
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + shadowLength * Math.cos(mizwahRad), cy + shadowLength * Math.sin(mizwahRad));
+      ctx.strokeStyle = "#0284c7";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Lingkaran Ujung Bayangan
+      ctx.beginPath();
+      ctx.arc(cx + shadowLength * Math.cos(mizwahRad), cy + shadowLength * Math.sin(mizwahRad), 6, 0, 2 * Math.PI);
+      ctx.fillStyle = "#38bdf8";
+      ctx.fill();
+
+      // 4. Panah Arah Kiblat (AZQ)
+      const kiblatRad = (selectedAzqDeg - 90) * Math.PI / 180;
+      const kiblatLen = radius - 35;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
+      ctx.strokeStyle = "#ef4444";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([5, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset line dash
+
+      // Ujung Panah Kiblat
+      const headLen = 12;
+      ctx.beginPath();
+      ctx.moveTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
+      ctx.lineTo(cx + (kiblatLen - headLen) * Math.cos(kiblatRad - 0.2), cy + (kiblatLen - headLen) * Math.sin(kiblatRad - 0.2));
+      ctx.lineTo(cx + (kiblatLen - headLen) * Math.cos(kiblatRad + 0.2), cy + (kiblatLen - headLen) * Math.sin(kiblatRad + 0.2));
+      ctx.fillStyle = "#ef4444";
+      ctx.fill();
+
+      // 5. Gnomon / Jarum Tengah Mizwala
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = "#475569";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fill();
+
+      // Teks Keterangan di Atas Canvas
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText(`Bayangan Mizwah: ${selectedMizwahDeg.toFixed(1)}°`, cx, cy + radius + 25);
+    }
+
     window.onload = function() {
       fetchNasaApi();
     };
