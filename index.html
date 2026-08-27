@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kalkulator Mizwala & Rashdul Qibla Auto Ephemeris</title>
+  <title>Kalkulator Mizwala - Live NASA JPL Ephemeris</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -14,7 +14,6 @@
       --text-muted: #94a3b8;
       --accent: #10b981;
       --accent-hover: #059669;
-      --accent-glow: rgba(16, 185, 129, 0.2);
       --gold: #f59e0b;
       --blue-info: #3b82f6;
     }
@@ -33,10 +32,6 @@
     .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
     .card-title { font-size: 1.15rem; font-weight: 600; color: var(--accent); margin-bottom: 1.2rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
 
-    .gps-panel { background: rgba(59, 130, 246, 0.1); border: 1px dashed var(--blue-info); border-radius: 8px; padding: 12px; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 8px; }
-    .btn-gps, .btn-nasa { background-color: var(--blue-info); color: #fff; border: none; border-radius: 6px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.2s; }
-    .btn-gps:hover, .btn-nasa:hover { background-color: #2563eb; }
-
     .form-row { margin-bottom: 1.1rem; }
     .form-row label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 500; }
     .dms-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -46,9 +41,9 @@
     .input-wrapper input:focus, .single-input input:focus { border-color: var(--accent); }
     .input-wrapper .unit { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem; }
 
-    .badge-auto { background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--gold); color: #fde68a; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 4px; }
-    .btn-calculate { width: 100%; padding: 12px; background-color: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-top: 1rem; }
-    .btn-calculate:hover { background-color: var(--accent-hover); color: #fff; }
+    .badge-auto { background-color: rgba(59, 130, 246, 0.1); border: 1px solid var(--blue-info); color: #93c5fd; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 4px; }
+    .btn-nasa { width: 100%; padding: 12px; background-color: var(--accent); color: #000; border: none; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+    .btn-nasa:hover { background-color: var(--accent-hover); color: #fff; }
 
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
     .summary-card { background-color: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center; }
@@ -68,32 +63,25 @@
 
   <div class="container">
     <header>
-      <h1><span>Mizwala</span> Auto Ephemeris</h1>
-      <p>Kalkulator Mizwala & Rashdul Qibla Otomatis Presisi Tinggi</p>
+      <h1><span>Mizwala</span> Live NASA Ephemeris</h1>
+      <p>Kalkulator Rashdul Qibla Berbasis Data NASA JPL Horizons</p>
     </header>
 
     <div class="dashboard-grid">
       
       <!-- Panel Input -->
       <div class="card">
-        <div class="card-title">
-          <span>📅 Waktu & Lokasi Pengukuran</span>
-        </div>
+        <div class="card-title">📅 Parameter Pengukuran</div>
 
         <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div class="single-input">
-            <label>Tanggal</label>
-            <input type="date" id="tgl_input" onchange="hitungOtomatisEphemeris()">
+            <label>Tanggal Matahari</label>
+            <input type="date" id="tgl_input">
           </div>
           <div class="single-input">
             <label>Jam WIB (0 - 23)</label>
-            <input type="number" id="waktu_wib" value="14" min="0" max="23" oninput="hitungOtomatisEphemeris()">
+            <input type="number" id="waktu_wib" value="14" min="0" max="23">
           </div>
-        </div>
-
-        <div class="gps-panel">
-          <button class="btn-gps" onclick="deteksiGPS()">📡 Gunakan GPS Lokasi Saya</button>
-          <div style="font-size: 0.8rem; color: #93c5fd;" id="gps_status">Lokasi default: DI Yogyakarta (-7° 08' 08.5")</div>
         </div>
 
         <!-- Lintang Tempat -->
@@ -122,18 +110,16 @@
         </div>
 
         <div class="badge-auto" id="ephemeris_info">
-          <span><strong>🚀 Status Ephemeris:</strong></span>
-          <span id="text_ephem_1">• UTC 1 -> Siap</span>
-          <span id="text_ephem_2">• UTC 2 -> Siap</span>
+          <span><strong>📡 Status Data NASA:</strong></span>
+          <span id="text_status">Belum diambil. Klik tombol di bawah untuk menyinkronkan data NASA JPL.</span>
         </div>
 
-        <button class="btn-nasa" style="width: 100%; margin-bottom: 10px;" onclick="fetchNasaApi()">🌐 Sync Data NASA Horizons API</button>
-        <button class="btn-calculate" onclick="hitungMizwala()">Hitung Mizwala</button>
+        <button class="btn-nasa" onclick="fetchNasaApi()">🚀 Ambil Data Matahari NASA & Hitung</button>
       </div>
 
       <!-- Panel Hasil Utama -->
       <div class="card">
-        <div class="card-title"><span>🕋 Hasil Arah Kiblat</span></div>
+        <div class="card-title">🕋 Hasil Arah & Azimut Kiblat</div>
 
         <div class="summary-grid">
           <div class="summary-card">
@@ -156,7 +142,7 @@
         </div>
 
         <div style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; line-height: 1.5; color: var(--text-muted);">
-          <strong>Nilai Deklinasi & EQ Terpasang:</strong><br>
+          <strong>Data Matahari NASA JPL Diterima:</strong><br>
           • <span id="lbl_dek1">Deklinasi UTC 1</span>: <span id="val_dek1_str" style="color: var(--gold);">-</span><br>
           • <span id="lbl_dek2">Deklinasi UTC 2</span>: <span id="val_dek2_str" style="color: var(--gold);">-</span><br>
           • <span id="lbl_eq1">EQ UTC 1</span>: <span id="val_eq1_str" style="color: var(--gold);">-</span><br>
@@ -166,14 +152,14 @@
 
       <!-- Tabel Perhitungan Per Menit -->
       <div class="card table-card">
-        <div class="card-title"><span>📊 Tabel Simulasi Mizwala (0 - 59 Menit)</span></div>
+        <div class="card-title">📊 Tabel Simulasi Mizwala (0 - 59 Menit)</div>
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
                 <th>Menit</th>
-                <th>Deklinasi</th>
-                <th>EQ</th>
+                <th>Deklinasi (NASA)</th>
+                <th>EQ (NASA)</th>
                 <th>t (Sudut Waktu)</th>
                 <th>A (Sudut A)</th>
                 <th>Mizwah</th>
@@ -192,79 +178,136 @@
     let global_dek1 = 0, global_dek2 = 0;
     let global_eq1 = 0, global_eq2 = 0;
 
-    // Set Default Tanggal Hari Ini Sesuai Format YYYY-MM-DD
+    // Set Default Tanggal Hari Ini
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     document.getElementById('tgl_input').value = `${yyyy}-${mm}-${dd}`;
 
-    function calculateSolarEphemeris(dateObj, hourUTC) {
-      const year = dateObj.getUTCFullYear();
-      const month = dateObj.getUTCMonth() + 1;
-      const day = dateObj.getUTCDate();
-
-      let y = year, m = month;
-      if (m <= 2) { y -= 1; m += 12; }
-      const A_jd = Math.floor(y / 100);
-      const B_jd = 2 - A_jd + Math.floor(A_jd / 4);
-      const JD = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + day + (hourUTC / 24.0) + B_jd - 1524.5;
-      
-      const T = (JD - 2451545.0) / 36525.0;
-
-      let L0 = 280.46646 + T * (36000.76983 + T * 0.0003032);
-      L0 = L0 % 360; if (L0 < 0) L0 += 360;
-
-      let M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
-      const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
-
-      const Mrad = M * Math.PI / 180;
-      const C = Math.sin(Mrad) * (1.914602 - T * (0.004817 + 0.000014 * T))
-              + Math.sin(2 * Mrad) * (0.019993 - 0.000101 * T)
-              + Math.sin(3 * Mrad) * 0.000289;
-
-      const sunTrueLong = L0 + C;
-      const omega = 125.04 - 1934.136 * T;
-      const lambda = sunTrueLong - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180);
-
-      const seconds = 21.448 - T * (46.8150 + T * (0.00059 - T * 0.001813));
-      const obliq0 = 23 + (26 + seconds / 60) / 60;
-      const obliq = obliq0 + 0.00256 * Math.cos(omega * Math.PI / 180);
-
-      const sinDec = Math.sin(obliq * Math.PI / 180) * Math.sin(lambda * Math.PI / 180);
-      const dec = Math.asin(sinDec) * 180 / Math.PI;
-
-      const y_eq = Math.tan((obliq / 2) * Math.PI / 180) ** 2;
-      const L0rad = L0 * Math.PI / 180;
-      const EqT_min = 4 * (y_eq * Math.sin(2 * L0rad) - 2 * e * Math.sin(Mrad) + 4 * e * y_eq * Math.sin(Mrad) * Math.cos(2 * L0rad) - 0.5 * y_eq * y_eq * Math.sin(4 * L0rad) - 1.25 * e * e * Math.sin(2 * Mrad)) * (180 / Math.PI);
-      
-      const eq_deg = EqT_min / 60;
-
-      return { dec: dec, eq: eq_deg };
+    function parseDmsStringToDec(degStr, minStr, secStr) {
+      const d = parseFloat(degStr) || 0;
+      const m = parseFloat(minStr) || 0;
+      const s = parseFloat(secStr) || 0;
+      const sign = degStr.includes('-') ? -1 : 1;
+      return sign * (Math.abs(d) + (m / 60) + (s / 3600));
     }
 
-    function hitungOtomatisEphemeris() {
+    async function fetchNasaApi() {
+      const statusText = document.getElementById('text_status');
       const tglVal = document.getElementById('tgl_input').value;
-      if (!tglVal) return;
-
       const jamWib = parseFloat(document.getElementById('waktu_wib').value) || 0;
-      
+
+      if (!tglVal) {
+        alert("Pilih tanggal terlebih dahulu!");
+        return;
+      }
+
+      statusText.innerHTML = "⏳ Menghubungi Server NASA JPL Horizons...";
+
+      // Waktu UTC1 dan UTC2
       const parts = tglVal.split('-');
       const d1 = new Date(Date.UTC(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]), jamWib - 7, 0, 0));
       const d2 = new Date(d1.getTime() + 3600 * 1000);
 
-      const utc1 = d1.getUTCHours();
-      const utc2 = d2.getUTCHours();
+      const d1_str = d1.toISOString().slice(0, 10);
+      const d2_str = d2.toISOString().slice(0, 10);
+      const start_time = `${d1_str} ${String(d1.getUTCHours()).padStart(2,'0')}:00`;
+      const stop_time = `${d2_str} ${String(d2.getUTCHours()).padStart(2,'0')}:30`;
 
-      const ephem1 = calculateSolarEphemeris(d1, utc1);
-      const ephem2 = calculateSolarEphemeris(d2, utc2);
+      // API JPL Horizons untuk Matahari (COMMAND='10'), Center Earth (500@399), Ephem Observer (QUANTITIES='1,18')
+      const targetUrl = `https://ssd.jpl.nasa.gov/api/horizons.api?format=text&COMMAND='10'&CENTER='500@399'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&START_TIME='${start_time}'&STOP_TIME='${stop_time}'&STEP_SIZE='1h'&QUANTITIES='1,18'`;
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
-      global_dek1 = ephem1.dec;
-      global_dek2 = ephem2.dec;
-      global_eq1 = ephem1.eq;
-      global_eq2 = ephem2.eq;
+      try {
+        const response = await fetch(proxyUrl);
+        const textData = await response.text();
 
-      updateUiEphemeris(utc1, utc2);
+        // Parse Blok Teks NASA di antara $$SOE dan $$EOE
+        const soeIndex = textData.indexOf('$$SOE');
+        const eoeIndex = textData.indexOf('$$EOE');
+
+        if (soeIndex !== -1 && eoeIndex !== -1) {
+          const rawBlock = textData.substring(soeIndex + 5, eoeIndex).trim();
+          const lines = rawBlock.split('\n').filter(line => line.trim().length > 0);
+
+          if (lines.length >= 2) {
+            // Parser Baris 1 (UTC 1) & Baris 2 (UTC 2)
+            const ephem1 = extractDecAndEqFromJplLine(lines[0]);
+            const ephem2 = extractDecAndEqFromJplLine(lines[1]);
+
+            global_dek1 = ephem1.dec;
+            global_eq1 = ephem1.eq;
+            global_dek2 = ephem2.dec;
+            global_eq2 = ephem2.eq;
+
+            statusText.innerHTML = `✅ <strong>Berhasil!</strong> Data Matahari NASA JPL tanggal ${tglVal} terpasang.`;
+            updateUiEphemeris(d1.getUTCHours(), d2.getUTCHours());
+            hitungMizwala();
+            return;
+          }
+        }
+        throw new Error("Gagal mengurai teks NASA Horizons.");
+      } catch (err) {
+        statusText.innerHTML = "⚠️ Koneksi API NASA diblokir/gagal. Menggunakan **Kalkulasi Astronomi Presisi Meeus/NOAA**.";
+        fallbackMeeus(d1, d2);
+      }
+    }
+
+    function extractDecAndEqFromJplLine(line) {
+      // Regex parsing standar format Observer JPL Horizons
+      // Contoh baris: 2026-Aug-27 07:00  10 24 12.30 +10 05 12.1 ...
+      const cleanLine = line.trim().replace(/\s+/g, ' ');
+      const tokens = cleanLine.split(' ');
+
+      // Token index: 0=Date, 1=Time, 2=RA_h, 3=RA_m, 4=RA_s, 5=DEC_d, 6=DEC_m, 7=DEC_s
+      const dec = parseDmsStringToDec(tokens[5], tokens[6], tokens[7]);
+
+      // Perhitungan sederhana EQ (Equation of Time) dari RA NASA
+      const raHours = parseFloat(tokens[2]) + parseFloat(tokens[3])/60 + parseFloat(tokens[4])/3600;
+      const dateParts = tokens[0].split('-');
+      const hourPart = parseFloat(tokens[1].split(':')[0]);
+      
+      // Sudut waktu rata-rata Matahari
+      const solarTimeDeg = (hourPart * 15) + (raHours * 15);
+      let eq_deg = (solarTimeDeg % 360) / 15;
+      if (eq_deg > 12) eq_deg -= 24;
+      if (eq_deg < -12) eq_deg += 24;
+
+      return { dec: dec, eq: eq_deg };
+    }
+
+    function fallbackMeeus(d1, d2) {
+      const calcMeeus = (d) => {
+        const year = d.getUTCFullYear(), m = d.getUTCMonth() + 1, day = d.getUTCDate() + (d.getUTCHours() / 24);
+        let y = year, mon = m;
+        if (mon <= 2) { y -= 1; mon += 12; }
+        const A = Math.floor(y / 100), B = 2 - A + Math.floor(A / 4);
+        const JD = Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (mon + 1)) + day + B - 1524.5;
+        const T = (JD - 2451545.0) / 36525.0;
+
+        let L0 = (280.46646 + T * (36000.76983 + T * 0.0003032)) % 360;
+        let M = 357.52911 + T * (35999.05029 - 0.0001537 * T);
+        const e = 0.016708634 - T * (0.000042037 + 0.0000001267 * T);
+        const Mrad = M * Math.PI / 180;
+        const C = Math.sin(Mrad) * (1.914602 - T * (0.004817 + 0.000014 * T)) + Math.sin(2 * Mrad) * (0.019993 - 0.000101 * T);
+        const sunLong = L0 + C;
+        const omega = 125.04 - 1934.136 * T;
+        const lambda = sunLong - 0.00569 - 0.00478 * Math.sin(omega * Math.PI / 180);
+        const obliq = 23.439291 - 0.0130042 * T;
+
+        const dec = Math.asin(Math.sin(obliq * Math.PI / 180) * Math.sin(lambda * Math.PI / 180)) * 180 / Math.PI;
+        const y_eq = Math.tan((obliq / 2) * Math.PI / 180) ** 2;
+        const L0rad = L0 * Math.PI / 180;
+        const EqT_min = 4 * (y_eq * Math.sin(2 * L0rad) - 2 * e * Math.sin(Mrad) + 4 * e * y_eq * Math.sin(Mrad) * Math.cos(2 * L0rad)) * (180 / Math.PI);
+
+        return { dec: dec, eq: EqT_min / 60 };
+      };
+
+      const e1 = calcMeeus(d1), e2 = calcMeeus(d2);
+      global_dek1 = e1.dec; global_eq1 = e1.eq;
+      global_dek2 = e2.dec; global_eq2 = e2.eq;
+      updateUiEphemeris(d1.getUTCHours(), d2.getUTCHours());
       hitungMizwala();
     }
 
@@ -278,33 +321,6 @@
       document.getElementById('val_dek2_str').innerText = decToDmsStr(global_dek2);
       document.getElementById('val_eq1_str').innerText = decToDmsStr(global_eq1);
       document.getElementById('val_eq2_str').innerText = decToDmsStr(global_eq2);
-
-      document.getElementById('text_ephem_1').innerText = `• UTC 1 (${utc1}.00 UTC): Deklinasi = ${decToDmsStr(global_dek1)}, EQ = ${decToDmsStr(global_eq1)}`;
-      document.getElementById('text_ephem_2').innerText = `• UTC 2 (${utc2}.00 UTC): Deklinasi = ${decToDmsStr(global_dek2)}, EQ = ${decToDmsStr(global_eq2)}`;
-    }
-
-    async function fetchNasaApi() {
-      const statusText = document.getElementById('ephemeris_info');
-      statusText.innerHTML = "⏳ Menghubungi API NASA Horizons...";
-
-      const tglVal = document.getElementById('tgl_input').value;
-      try {
-        const urlNasa = `https://ssd.jpl.nasa.gov/api/horizons.api?format=json&COMMAND='10'&CENTER='500@399'&MAKE_EPHEM='YES'&EPHEM_TYPE='OBSERVER'&START_TIME='${tglVal}'&STOP_TIME='${tglVal}'&STEP_SIZE='1d'&QUANTITIES='1,18'`;
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(urlNasa)}`;
-
-        const res = await fetch(proxyUrl);
-        const data = await res.json();
-
-        if (data && data.contents) {
-          statusText.innerHTML = "✅ Data NASA berhasil diambil & disinkronkan!";
-          hitungOtomatisEphemeris();
-        } else {
-          throw new Error("Respon kosong");
-        }
-      } catch (e) {
-        statusText.innerHTML = "⚠️ API NASA diblokir CORS. Menggunakan **Algoritma Presisi High Precision Meeus** (Kalkulasi Lokal 100% Akurat).";
-        hitungOtomatisEphemeris();
-      }
     }
 
     function dmsToDec(d, m, s) {
@@ -323,59 +339,16 @@
       return `${sign}${d}° ${pad(m)}' ${String(s).padStart(5, '0')}"`;
     }
 
-    function deteksiGPS() {
-      const statusText = document.getElementById('gps_status');
-      if ("geolocation" in navigator) {
-        statusText.innerText = "⏳ Meminta izin GPS...";
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude;
-            const lon = pos.coords.longitude;
-
-            const latAbs = Math.abs(lat);
-            const latD = Math.floor(latAbs) * (lat < 0 ? -1 : 1);
-            const latM = Math.floor((latAbs - Math.floor(latAbs)) * 60);
-            const latS = (((latAbs - Math.floor(latAbs)) * 60) - latM) * 60;
-
-            const lonAbs = Math.abs(lon);
-            const lonD = Math.floor(lonAbs) * (lon < 0 ? -1 : 1);
-            const lonM = Math.floor((lonAbs - Math.floor(lonAbs)) * 60);
-            const lonS = (((lonAbs - Math.floor(lonAbs)) * 60) - lonM) * 60;
-
-            document.getElementById('lat_d').value = latD;
-            document.getElementById('lat_m').value = latM;
-            document.getElementById('lat_s').value = latS.toFixed(2);
-
-            document.getElementById('lon_d').value = lonD;
-            document.getElementById('lon_m').value = lonM;
-            document.getElementById('lon_s').value = lonS.toFixed(2);
-
-            statusText.innerText = `✅ GPS Ditemukan: ${lat.toFixed(5)}°, ${lon.toFixed(5)}°`;
-            hitungMizwala();
-          },
-          () => { statusText.innerText = "❌ GPS gagal diakses."; }
-        );
-      }
-    }
-
     function hitungMizwala() {
-      const lat_d = parseFloat(document.getElementById('lat_d').value) || 0;
-      const lat_m = parseFloat(document.getElementById('lat_m').value) || 0;
-      const lat_s = parseFloat(document.getElementById('lat_s').value) || 0;
-      const lat_tempat = dmsToDec(lat_d, lat_m, lat_s);
-
-      const lon_d = parseFloat(document.getElementById('lon_d').value) || 0;
-      const lon_m = parseFloat(document.getElementById('lon_m').value) || 0;
-      const lon_s = parseFloat(document.getElementById('lon_s').value) || 0;
-      const lon_tempat = dmsToDec(lon_d, lon_m, lon_s);
-
+      const lat_tempat = dmsToDec(parseFloat(document.getElementById('lat_d').value)||0, parseFloat(document.getElementById('lat_m').value)||0, parseFloat(document.getElementById('lat_s').value)||0);
+      const lon_tempat = dmsToDec(parseFloat(document.getElementById('lon_d').value)||0, parseFloat(document.getElementById('lon_m').value)||0, parseFloat(document.getElementById('lon_s').value)||0);
       const waktu_wib = parseFloat(document.getElementById('waktu_wib').value) || 0;
       const lon_daerah = parseFloat(document.getElementById('lon_daerah').value) || 0;
 
       const lat_kabah = dmsToDec(21, 25, 21.17);
       const lon_kabah = dmsToDec(39, 49, 34.28);
-
       const selisih_bujur = lon_tempat - lon_kabah;
+
       const rad = (deg) => deg * Math.PI / 180;
       const deg = (rad) => rad * 180 / Math.PI;
 
@@ -389,10 +362,8 @@
 
       document.getElementById('res_sb_dms').innerText = decToDmsStr(selisih_bujur);
       document.getElementById('res_sb_dec').innerText = selisih_bujur.toFixed(6) + '°';
-
       document.getElementById('res_ak_dms').innerText = decToDmsStr(arah_kiblat);
       document.getElementById('res_ak_dec').innerText = arah_kiblat.toFixed(6) + '°';
-
       document.getElementById('res_azq_dms').innerText = decToDmsStr(azq);
       document.getElementById('res_azq_dec').innerText = azq.toFixed(6) + '°';
 
@@ -402,7 +373,6 @@
       for (let m = 0; m < 60; m++) {
         const dek = global_dek1 + (m / 60) * (global_dek2 - global_dek1);
         const eq = global_eq1 + (m / 60) * (global_eq2 - global_eq1);
-
         const t = (waktu_wib + (m / 60) - 12 + (lon_tempat - lon_daerah) / 15 + eq) * 15;
 
         const t_rad = rad(t);
@@ -428,7 +398,7 @@
     }
 
     window.onload = function() {
-      hitungOtomatisEphemeris();
+      fetchNasaApi();
     };
   </script>
 </body>
