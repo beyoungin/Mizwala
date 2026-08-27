@@ -84,6 +84,13 @@
             <input type="number" id="waktu_wib" value="14" min="0" max="23" oninput="fetchNasaApi()">
           </div>
         </div>
+        <!--  TOMBOL GPS DITARUH DI SINI -->
+        <div class="form-row" style="margin-bottom: 1.2rem;">
+          <button type="button" id="btn_gps" onclick="getGpsLocation()" style="width: 100%; padding: 10px; background-color: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem;">
+            📍 Ambil Lokasi GPS 
+          </button>
+          <span id="gps_status" style="display: block; font-size: 0.75rem; color: var(--gold); margin-top: 6px; text-align: center;"></span>
+        </div>
 
         <!-- Lintang Tempat -->
         <div class="form-row">
@@ -180,18 +187,68 @@
     </div>
   </div>
 
+  <!-- Tag Script Utama Aplikasi Mizwala -->
   <script>
     let global_dek1 = 0, global_dek2 = 0;
     let global_eq1 = 0, global_eq2 = 0;
     let selectedMizwahDeg = 0;
-    let selectedAzqDeg = 294.5;
+    let selectedAzqDeg = 0;
 
-    const today = new Date();
-    document.getElementById('tgl_input').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    // 1. Fungsi Deteksi Lokasi GPS Otomatis
+    function getGpsLocation() {
+      const statusLbl = document.getElementById('gps_status');
+      if (!navigator.geolocation) {
+        statusLbl.innerText = "Browser Anda tidak mendukung Geolocation.";
+        return;
+      }
 
+      statusLbl.innerText = "Mengambil koordinat GPS...";
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          const absLat = Math.abs(lat);
+          const latD = Math.floor(absLat) * (lat < 0 ? -1 : 1);
+          const latM = Math.floor((absLat - Math.abs(latD)) * 60);
+          const latS = (((absLat - Math.abs(latD)) * 60 - latM) * 60).toFixed(2);
+
+          const absLon = Math.abs(lon);
+          const lonD = Math.floor(absLon) * (lon < 0 ? -1 : 1);
+          const lonM = Math.floor((absLon - Math.abs(lonD)) * 60);
+          const lonS = (((absLon - Math.abs(lonD)) * 60 - lonM) * 60).toFixed(2);
+
+          document.getElementById('lat_d').value = latD;
+          document.getElementById('lat_m').value = latM;
+          document.getElementById('lat_s').value = latS;
+
+          document.getElementById('lon_d').value = lonD;
+          document.getElementById('lon_m').value = lonM;
+          document.getElementById('lon_s').value = lonS;
+
+          statusLbl.innerText = "✅ Lokasi GPS berhasil dimasukkan!";
+          hitungMizwala();
+        },
+        (error) => {
+          statusLbl.innerText = "❌ Gagal mengambil lokasi GPS.";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    // 2. Helper & Parsing Ephemeris
     function parseDmsStringToDec(degStr, minStr, secStr) {
       const d = parseFloat(degStr) || 0, m = parseFloat(minStr) || 0, s = parseFloat(secStr) || 0;
       return (degStr.includes('-') ? -1 : 1) * (Math.abs(d) + (m / 60) + (s / 3600));
+    }
+
+    function dmsToDec(d, m, s) { 
+      return (d < 0 || Object.is(d, -0) ? -1 : 1) * (Math.abs(d) + Math.abs(m)/60 + Math.abs(s)/3600); 
+    }
+
+    function decToDmsStr(val) {
+      const absVal = Math.abs(val), d = Math.floor(absVal), mVal = (absVal - d) * 60, m = Math.floor(mVal), s = ((mVal - m) * 60).toFixed(2);
+      return `${val < 0 ? "-" : ""}${d}° ${String(m).padStart(2,'0')}' ${String(s).padStart(5,'0')}"`;
     }
 
     async function fetchNasaApi() {
@@ -269,12 +326,7 @@
       document.getElementById('val_dek2_str').innerText = decToDmsStr(global_dek2);
     }
 
-    function dmsToDec(d, m, s) { return (d < 0 || Object.is(d, -0) ? -1 : 1) * (Math.abs(d) + Math.abs(m)/60 + Math.abs(s)/3600); }
-    function decToDmsStr(val) {
-      const absVal = Math.abs(val), d = Math.floor(absVal), mVal = (absVal - d) * 60, m = Math.floor(mVal), s = ((mVal - m) * 60).toFixed(2);
-      return `${val < 0 ? "-" : ""}${d}° ${String(m).padStart(2,'0')}' ${String(s).padStart(5,'0')}"`;
-    }
-
+    // 3. Kalkulasi Utama Mizwala & Arah Kiblat
     function hitungMizwala() {
       const lat_t = dmsToDec(parseFloat(document.getElementById('lat_d').value)||0, parseFloat(document.getElementById('lat_m').value)||0, parseFloat(document.getElementById('lat_s').value)||0);
       const lon_t = dmsToDec(parseFloat(document.getElementById('lon_d').value)||0, parseFloat(document.getElementById('lon_m').value)||0, parseFloat(document.getElementById('lon_s').value)||0);
@@ -287,7 +339,7 @@
       const rad = (deg) => deg * Math.PI / 180, deg = (rad) => rad * 180 / Math.PI;
       const cot_B = (Math.sin(rad(lat_t)) * Math.cos(rad(selisih_bujur)) - Math.tan(rad(lat_k)) * Math.cos(rad(lat_t))) / Math.sin(rad(selisih_bujur));
       const arah_kiblat = Math.abs(deg(Math.atan(1 / cot_B)));
-      selectedAzqDeg = 360 - arah_kiblat;
+      selectedAzqDeg = 360 - arah_kiblat; // Nilai AZQ dinamis hasil kalkulasi
 
       document.getElementById('res_sb_dms').innerText = decToDmsStr(selisih_bujur);
       document.getElementById('res_sb_dec').innerText = selisih_bujur.toFixed(6) + '°';
@@ -334,6 +386,165 @@
       drawMizwalaCanvas();
     }
 
+    // 4. Renderer Visual Canvas Papan Mizwala (Skala 1°, 5°, 10°)
+    function drawMizwalaCanvas() {
+      const canvas = document.getElementById('mizwalaCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      canvas.width = 480;
+      canvas.height = 480;
+
+      const cx = canvas.width / 2, cy = canvas.height / 2;
+      const outerRingRadius = 210, yellowRadius = 165;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Octagon Base
+      ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * 45 + 22.5) * Math.PI / 180;
+        const x = cx + (outerRingRadius + 22) * Math.cos(angle);
+        const y = cy + (outerRingRadius + 22) * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = "#e2e8f0";
+      ctx.fill();
+      ctx.strokeStyle = "#cbd5e1";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Outer Ring Putih
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerRingRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Inner Dial Kuning
+      ctx.beginPath();
+      ctx.arc(cx, cy, yellowRadius, 0, 2 * Math.PI);
+      ctx.fillStyle = "#eab308";
+      ctx.fill();
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Lingkaran Konsentris
+      for (let r = 25; r < yellowRadius; r += 15) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(30, 41, 59, 0.25)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Skala 360 Derajat
+      ctx.fillStyle = "#0f172a";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      for (let deg = 0; deg < 360; deg++) {
+        const rad = (deg - 90) * Math.PI / 180;
+        let lineStartR = outerRingRadius, lineEndR = yellowRadius;
+
+        if (deg % 10 === 0) {
+          lineStartR = outerRingRadius;
+          lineEndR = yellowRadius;
+
+          ctx.beginPath();
+          ctx.moveTo(cx + yellowRadius * Math.cos(rad), cy + yellowRadius * Math.sin(rad));
+          ctx.lineTo(cx + 20 * Math.cos(rad), cy + 20 * Math.sin(rad));
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.4)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          const textR = outerRingRadius - 14;
+          ctx.font = "bold 10px 'Segoe UI', sans-serif";
+          
+          ctx.save();
+          ctx.translate(cx + textR * Math.cos(rad), cy + textR * Math.sin(rad));
+          ctx.rotate(rad + Math.PI / 2);
+          ctx.fillText(deg.toString(), 0, 0);
+          ctx.restore();
+
+        } else if (deg % 5 === 0) {
+          lineStartR = outerRingRadius;
+          lineEndR = yellowRadius + 12;
+        } else {
+          lineStartR = outerRingRadius;
+          lineEndR = outerRingRadius - 8;
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(cx + lineStartR * Math.cos(rad), cy + lineStartR * Math.sin(rad));
+        ctx.lineTo(cx + lineEndR * Math.cos(rad), cy + lineEndR * Math.sin(rad));
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = (deg % 10 === 0) ? 1.5 : (deg % 5 === 0 ? 1.2 : 0.8);
+        ctx.stroke();
+      }
+
+      // Bayangan Mizwah
+      const mizwahRad = (selectedMizwahDeg - 90) * Math.PI / 180;
+      const shadowLen = yellowRadius - 20;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + shadowLen * Math.cos(mizwahRad), cy + shadowLen * Math.sin(mizwahRad));
+      ctx.strokeStyle = "#0284c7";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(cx + shadowLen * Math.cos(mizwahRad), cy + shadowLen * Math.sin(mizwahRad), 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#38bdf8";
+      ctx.fill();
+
+      // Panah Kiblat (AZQ)
+      const kiblatRad = (selectedAzqDeg - 90) * Math.PI / 180;
+      const kiblatLen = yellowRadius - 35;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
+      ctx.strokeStyle = "#dc2626";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const hLen = 12;
+      ctx.beginPath();
+      ctx.moveTo(cx + kiblatLen * Math.cos(kiblatRad), cy + kiblatLen * Math.sin(kiblatRad));
+      ctx.lineTo(cx + (kiblatLen - hLen) * Math.cos(kiblatRad - 0.2), cy + (kiblatLen - hLen) * Math.sin(kiblatRad - 0.2));
+      ctx.lineTo(cx + (kiblatLen - hLen) * Math.cos(kiblatRad + 0.2), cy + (kiblatLen - hLen) * Math.sin(kiblatRad + 0.2));
+      ctx.fillStyle = "#dc2626";
+      ctx.fill();
+
+      // Gnomon Tengah
+      ctx.beginPath();
+      ctx.arc(cx, cy, 11, 0, 2 * Math.PI);
+      ctx.fillStyle = "#475569";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fill();
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText(`Mizwah: ${selectedMizwahDeg.toFixed(2)}° | Kiblat: ${selectedAzqDeg.toFixed(2)}°`, cx, canvas.height - 12);
+    }
+
+    // 5. Inisialisasi Saat Halaman Dimuat
+    window.onload = function() {
+      const today = new Date();
+      document.getElementById('tgl_input').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      fetchNasaApi();
+    };
     // CANVAS DRAWING SIMULATOR MIZWALA
    function drawMizwalaCanvas() {
   const canvas = document.getElementById('mizwalaCanvas');
