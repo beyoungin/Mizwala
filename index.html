@@ -241,16 +241,7 @@
             global_dek2 = ephem2.dec;
             global_eq2 = ephem2.eq;
 
-            statusText.innerHTML = `✅ <strong>Berhasil!</strong> Data Matahari NASA JPL tanggal ${tglVal} terpasang.`;
-            updateUiEphemeris(d1.getUTCHours(), d2.getUTCHours());
-            hitungMizwala();
-            return;
-          }
-        }
-        throw new Error("Gagal mengurai teks NASA Horizons.");
-      } catch (err) {
-        statusText.innerHTML = "⚠️ Koneksi API NASA diblokir/gagal. Menggunakan **Kalkulasi Astronomi Presisi Meeus/NOAA**.";
-        fallbackMeeus(d1, d2);
+     
       }
     }
 
