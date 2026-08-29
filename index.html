@@ -561,7 +561,7 @@
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 1. Base Octagon / Acrylic Base Board (Landasan Putih Akrilik Segi delapan)
+  //  Base Octagon / Acrylic Base Board 
   ctx.beginPath();
   for (let i = 0; i < 8; i++) {
     const angle = (i * 45 + 22.5) * Math.PI / 180;
@@ -576,7 +576,7 @@
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // 2. Ring Skala Luar (Warna Putih/Krem untuk Angka & Garis Presisi)
+  //  Ring Skala Luar 
   ctx.beginPath();
   ctx.arc(cx, cy, outerRingRadius, 0, 2 * Math.PI);
   ctx.fillStyle = "#ffffff";
@@ -585,7 +585,7 @@
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // 3. Papan Tengah Mizwala (Warna Kuning Khas Mizwala)
+  //  Papan Tengah Mizwala (Warna Kuning Khas Mizwala)
   ctx.beginPath();
   ctx.arc(cx, cy, yellowRadius, 0, 2 * Math.PI);
   ctx.fillStyle = "#eab308";
@@ -594,7 +594,7 @@
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // 4. Lingkaran Konsentris di Papan Kuning (Grid Pengukur Panjang Bayangan)
+  //  Lingkaran Konsentris di Papan Kuning (Grid Pengukur Panjang Bayangan)
   for (let r = 25; r < yellowRadius; r += 15) {
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, 2 * Math.PI);
@@ -603,7 +603,7 @@
     ctx.stroke();
   }
 
-  // 5. Drawing Skala 360 Derajat (Detail Garis 1°, 5°, dan 10°)
+  //  Drawing Skala 360 Derajat (Detail Garis 1°, 5°, dan 10°)
   ctx.fillStyle = "#0f172a";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -657,7 +657,7 @@
     ctx.stroke();
   }
 
-  // 6. Visualisasi Bayangan Matahari (Mizwah)
+  //  Visualisasi Bayangan Matahari (Mizwah)
   const mizwahRad = (selectedMizwahDeg - 90) * Math.PI / 180;
   const shadowLen = yellowRadius - 20;
 
@@ -674,7 +674,7 @@
   ctx.fillStyle = "#38bdf8";
   ctx.fill();
 
-  // 7. Visualisasi Panah Arah Kiblat (AZQ)
+  //  Visualisasi Panah Arah Kiblat (AZQ)
   const kiblatRad = (selectedAzqDeg - 90) * Math.PI / 180;
   const kiblatLen = yellowRadius - 35;
 
@@ -697,7 +697,7 @@
   ctx.fillStyle = "#dc2626";
   ctx.fill();
 
-  // 8. Visualisasi Gnomon / Paku Tengah (Kuningan/Perak)
+  //  Visualisasi Gnomon / Paku Tengah (Kuningan/Perak)
   ctx.beginPath();
   ctx.arc(cx, cy, 11, 0, 2 * Math.PI);
   ctx.fillStyle = "#475569";
